@@ -5,14 +5,18 @@ import "dotenv/config";
 
 const client = new DstackClient("../dstack/sdk/simulator/dstack.sock");
 const key = ed25519.keygen();
-await client.emitEvent("pubkey", key.publicKey);
+console.debug("Public Key:", Buffer.from(key.publicKey).toString("hex"));
 
 const app = express();
 const PORT = 3000;
 
 app.get("/quote", async (_, res) => {
-  const quote = await client.getQuote("my-custom-data");
+  const quote = await client.getQuote(key.publicKey);
   res.send(quote);
+});
+
+app.get("/key", (_, res) => {
+  res.send(key.publicKey);
 });
 
 app.listen(PORT, () => {

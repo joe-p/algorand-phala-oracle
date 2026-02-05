@@ -47,8 +47,25 @@ async fn main() {
     let client = ProverClient::builder().mock().build();
 
     println!("Executing prover...");
-    let (_output, report) = client.execute(PROVER_ELF, &stdin).run().unwrap();
+    let (mut output, report) = client.execute(PROVER_ELF, &stdin).run().unwrap();
 
     println!("Program executed successfully.");
     println!("Report: {:#?}", report);
+
+    let mut rmtr3_bytes = [0u8; 48];
+    output.read_slice(&mut rmtr3_bytes);
+    println!("RTMR3: {}", hex::encode(rmtr3_bytes));
+
+    let mut committed_key = [0u8; 32];
+    output.read_slice(&mut committed_key);
+    println!("ed25519 key: {}", hex::encode(committed_key));
+
+    let app_key = reqwest::get("http://localhost:3000/key")
+        .await
+        .expect("should be able to get quote")
+        .bytes()
+        .await
+        .expect("should be able to get quote hex");
+
+    assert_eq!(&committed_key[..], &app_key[..], "App key mismatch");
 }

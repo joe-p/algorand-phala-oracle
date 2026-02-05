@@ -17,6 +17,8 @@ pub fn main() {
     //
     // let collateral: QuoteCollateralV3 =
     //     borsh::from_slice(collateral_bytes.as_slice()).expect("failed to deserialize collateral");
+    //
+    // verify(&quote_bytes, &collateral, time).expect("failed to verify quote");
 
     let event_digests: Vec<EventDigest> = rtmr3_event_digests_vec
         .into_iter()
@@ -39,17 +41,20 @@ pub fn main() {
 
     let quote: Quote = Quote::parse(&quote_bytes).expect("failed to parse quote");
 
-    let quoted_rt_mr3 = quote
-        .report
-        .as_td10()
-        .expect("failed to get td15 report")
-        .rt_mr3;
+    let report = quote.report.as_td10().expect("failed to get td10 report");
+    let quoted_rt_mr3 = report.rt_mr3;
 
     assert_eq!(
         quoted_rt_mr3, replayed_rtmr,
         "RTMR3 mismatch: quoted RTMR3 does not match replayed RTMR3"
     );
 
-    // let report = verify(&quote_bytes, &collateral, time).expect("failed to verify quote");
-    // let report_bytes = borsh::to_vec(&report).expect("failed to serialize report");
+    assert_eq!(
+        report.report_data[32..],
+        [0u8; 32],
+        "Report data is longer than 32 bytes"
+    );
+
+    sp1_zkvm::io::commit_slice(&replayed_rtmr);
+    sp1_zkvm::io::commit_slice(&report.report_data[..32]);
 }
