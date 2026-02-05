@@ -12,7 +12,7 @@ const PORT = 3000;
 
 app.get("/quote", async (_, res) => {
   const quote = await client.getQuote("my-custom-data");
-  res.send(quote.quote);
+  res.send(quote);
 });
 
 app.listen(PORT, () => {

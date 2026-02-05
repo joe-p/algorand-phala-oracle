@@ -9,3 +9,4 @@ dcap-qvl.workspace = true
 wincode.workspace = true
 borsh.workspace = true
 tiny-keccak = { version = "2.0.2", features = ["keccak"] }
+sha2 = "0.10.9"

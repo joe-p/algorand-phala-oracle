@@ -1480,6 +1480,31 @@ dependencies = [
 ]
 
 [[package]]
+name = "bon"
+version = "3.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "234655ec178edd82b891e262ea7cf71f6584bcd09eff94db786be23f1821825c"
+dependencies = [
+ "bon-macros",
+ "rustversion",
+]
+
+[[package]]
+name = "bon-macros"
+version = "3.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "89ec27229c38ed0eb3c0feee3d2c1d6a4379ae44f418a29a658890e062d8f365"
+dependencies = [
+ "darling",
+ "ident_case",
+ "prettyplease",
+ "proc-macro2",
+ "quote",
+ "rustversion",
+ "syn 2.0.114",
+]
+
+[[package]]
 name = "borsh"
 version = "1.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2305,6 +2330,22 @@ name = "downcast-rs"
 version = "1.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "75b325c5dbd37f80359721ad39aca5a29fb04c89279657cffdda8736d0c0b9d2"
+
+[[package]]
+name = "dstack-sdk-types"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92088a95c64c01d235c6592a7dd892ab6c7198b371b3a8c15d4cf62566d82138"
+dependencies = [
+ "anyhow",
+ "bon",
+ "borsh",
+ "hex",
+ "pkcs8",
+ "serde",
+ "serde_json",
+ "sha2",
+]
 
 [[package]]
 name = "dunce"
@@ -5941,6 +5982,7 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "dcap-qvl",
+ "sha2",
  "sp1-zkvm",
  "tiny-keccak",
  "wincode",
@@ -5952,8 +5994,10 @@ version = "0.1.0"
 dependencies = [
  "borsh",
  "dcap-qvl",
+ "dstack-sdk-types",
  "hex",
  "reqwest 0.13.1",
+ "serde_json",
  "sp1-build",
  "sp1-sdk",
  "tokio",
