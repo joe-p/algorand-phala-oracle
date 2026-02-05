@@ -1,0 +1,11 @@
+[package]
+name = "sp1-guest"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+sp1-zkvm.workspace = true
+dcap-qvl.workspace = true
+wincode.workspace = true
+borsh.workspace = true
+tiny-keccak = { version = "2.0.2", features = ["keccak"] }

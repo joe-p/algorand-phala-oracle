@@ -1,0 +1,16 @@
+[package]
+name = "sp1-host"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+sp1-sdk = "5.2.4"
+borsh.workspace = true
+tokio = "1.49.0"
+dcap-qvl = { workspace = true, features = ["report"] }
+reqwest = "0.13.1"
+hex = "0.4.3"
+
+[build-dependencies]
+sp1-build = "5.2.4"
