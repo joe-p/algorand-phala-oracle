@@ -73,12 +73,9 @@ export class Oracle extends Contract {
    * - storage-fs
    * - system-read
    */
-  rmtr3 = GlobalState<Sha384Digest>();
+  rtmr3 = GlobalState<Sha384Digest>();
 
-  protected updatePubkeyAndRtmr3(
-    signals: Signals,
-    committedInputs: CommittedInputs,
-  ) {
+  protected updatePubkey(signals: Signals, committedInputs: CommittedInputs) {
     const toBeHashed = committedInputs.rtmr0
       .concat(committedInputs.rtmr1)
       .concat(committedInputs.rtmr2)
@@ -97,9 +94,12 @@ export class Oracle extends Contract {
     );
 
     assert(committedInputs.appID === this.appID.value, "Phala App ID mismatch");
+    assert(committedInputs.rtmr0 === this.rtmr0.value, "RTMR0 mismatch");
+    assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
+    assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
+    assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
 
     this.pubkey.value = committedInputs.pubkey;
-    this.rmtr3.value = committedInputs.rtmr3;
   }
 
   protected assertSenderIsPhalaApp() {
@@ -125,14 +125,14 @@ export class Oracle extends Contract {
     assert(!this.appID.hasValue, "Contract already bootstrapped");
     this.assertFeeCovered(coverFeeTxn);
 
-    this.pubkey.value = committedInputs.pubkey;
     this.appID.value = committedInputs.appID;
     this.composeHash.value = committedInputs.composeHash;
     this.rtmr0.value = committedInputs.rtmr0;
     this.rtmr1.value = committedInputs.rtmr1;
     this.rtmr2.value = committedInputs.rtmr2;
+    this.rtmr3.value = committedInputs.rtmr3;
 
-    this.updatePubkeyAndRtmr3(signals, committedInputs);
+    this.updatePubkey(signals, committedInputs);
   }
 
   coverFee() {
