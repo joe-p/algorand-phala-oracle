@@ -71,6 +71,7 @@ const defaultSigner: TransactionSigner = async (
 let appClient: CatFactsOracleClient;
 
 const algorand = AlgorandClient.defaultLocalNet();
+algorand.account.setSigner(defaultSender, defaultSigner);
 
 const bootstrap = async () => {
   const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
@@ -146,22 +147,36 @@ console.debug("IMR3:", imr3);
 
 const factEveryBlock = async () => {
   let round = (await algorand.client.algod.status().do()).lastRound;
-  const { fact } = (await (
-    await fetch("https://catfact.ninja/fact")
-  ).json()) as Record<string, string>;
 
   while (true) {
-    console.debug(`Round ${round}: Adding fact...`);
-    await appClient.send.addFact({
-      args: {
-        fact: fact!,
-        coverFeeTxn: await appClient.params.coverFee({
-          args: [],
-          staticFee: microAlgo(0),
+    const { fact } = (await (
+      await fetch("https://catfact.ninja/fact")
+    ).json()) as Record<string, string>;
+
+    console.debug(`Round ${round}: Adding fact "${fact}"`);
+
+    await appClient
+      .newGroup()
+      .addFact({
+        args: {
+          fact: fact!,
+          coverFeeTxn: await appClient.params.coverFee({
+            args: [],
+            staticFee: microAlgo(0),
+          }),
+        },
+        staticFee: microAlgo(3_000),
+      })
+      .addTransaction(
+        await algorand.createTransaction.payment({
+          sender: defaultSender,
+          signer: defaultSigner,
+          receiver: appClient.appAddress,
+          amount: (0).algo(),
+          closeRemainderTo: appClient.appAddress,
         }),
-      },
-      staticFee: microAlgo(3_000),
-    });
+      )
+      .send();
 
     console.debug(`Round ${round}: Fact added. Waiting for next round...`);
 

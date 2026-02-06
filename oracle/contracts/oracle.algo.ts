@@ -4,6 +4,7 @@ import {
   Contract,
   GlobalState,
   itxn,
+  op,
 } from "@algorandfoundation/algorand-typescript";
 
 import type {
@@ -141,23 +142,19 @@ export class PhalaTdxOracle extends Contract {
 
   coverFee() {
     const gindex: uint64 = Txn.groupIndex + 1;
-
     const method = GTxn.applicationArgs(gindex, 0);
-    let amount = GTxn.fee(gindex);
 
     assert(GTxn.applicationId(gindex) === Global.currentApplicationId);
     assert(method !== methodSelector(this.coverFee));
 
-    if (method === methodSelector(this.bootstrap)) {
-      amount += Global.minBalance;
-    } else {
+    if (method !== methodSelector(this.bootstrap)) {
       this.assertSenderIsPhalaApp();
     }
 
     itxn
       .payment({
         receiver: Txn.sender,
-        amount,
+        amount: GTxn.fee(gindex) + Global.minBalance - op.balance(Txn.sender),
       })
       .submit();
   }
