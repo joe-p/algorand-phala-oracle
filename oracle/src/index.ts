@@ -2,7 +2,10 @@ import { ed25519 } from "@noble/curves/ed25519.js";
 import { sha256 } from "@noble/hashes/sha2";
 import { DstackClient } from "@phala/dstack-sdk";
 import express from "express";
-import { CatFactsOracleFactory } from "../contracts/clients/CatFactsOracleClient";
+import {
+  CatFactsOracleClient,
+  CatFactsOracleFactory,
+} from "../contracts/clients/CatFactsOracleClient";
 import {
   algo,
   AlgorandClient,
@@ -65,9 +68,11 @@ const defaultSigner: TransactionSigner = async (
   });
 };
 
-const bootstrap = async () => {
-  const algorand = AlgorandClient.defaultLocalNet();
+let appClient: CatFactsOracleClient;
 
+const algorand = AlgorandClient.defaultLocalNet();
+
+const bootstrap = async () => {
   const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
     defaultSender: new algosdk.Address(key.publicKey),
     defaultSigner,
@@ -89,9 +94,12 @@ const bootstrap = async () => {
   );
 
   // In prod another account would create the app
-  const { appClient } = await factory.send.create.bare({
+  const res = await factory.send.create.bare({
     sender: await algorand.account.localNetDispenser(),
   });
+
+  appClient = res.appClient;
+
   await algorand.account.ensureFundedFromEnvironment(
     appClient.appAddress,
     (1).algo(),
@@ -146,6 +154,34 @@ console.debug("IMR1 Events:", imr1.length);
 console.debug("IMR2 Events:", imr2.length);
 console.debug("IMR3 Events:", imr3.length);
 console.debug("IMR3:", imr3);
+
+const factEveryBlock = async () => {
+  let round = (await algorand.client.algod.status().do()).lastRound;
+
+  while (true) {
+    console.debug(`Round ${round}: Adding fact...`);
+    await appClient.send.addFact({
+      args: {
+        fact: "Cats are cool",
+        coverFeeTxn: await appClient.params.coverFee({
+          args: [],
+          staticFee: microAlgo(0),
+        }),
+      },
+      staticFee: microAlgo(3_000),
+    });
+
+    console.debug(`Round ${round}: Fact added. Waiting for next round...`);
+
+    // In prod we'll wait for a block, but for now use timeout
+    // await algorand.client.algod.statusAfterBlock(round).do();
+    await new Promise((resolve) => setTimeout(resolve, 3000));
+
+    round += 1n;
+  }
+};
+
+factEveryBlock();
 
 const app = express();
 const PORT = 3000;
