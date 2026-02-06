@@ -76,9 +76,17 @@ const bootstrap = async () => {
   const info = await client.info();
   const appId = new Uint8Array(Buffer.from(info.app_id, "hex"));
   const composeHash = new Uint8Array(Buffer.from(info.compose_hash, "hex"));
+  const rtmr0 = new Uint8Array(48);
+  const rtmr1 = new Uint8Array(48);
+  const rtmr2 = new Uint8Array(48);
   const rtmr3 = new Uint8Array(48);
+  rtmr1.set([1], 0);
+  rtmr2.set([2], 0);
+  rtmr3.set([3], 0);
 
-  const signal = sha256(concatBytes(rtmr3, key.publicKey, composeHash, appId));
+  const signal = sha256(
+    concatBytes(rtmr0, rtmr1, rtmr2, rtmr3, key.publicKey, composeHash, appId),
+  );
 
   // In prod another account would create the app
   const { appClient } = await factory.send.create.bare({
@@ -95,6 +103,9 @@ const bootstrap = async () => {
       signals: [algosdk.bytesToBigInt(signal)],
       _proof: new Uint8Array(0),
       committedInputs: {
+        rtmr0,
+        rtmr1,
+        rtmr2,
         rtmr3,
         pubkey: key.publicKey,
         composeHash,
@@ -123,6 +134,18 @@ console.debug("Public Key:", Buffer.from(key.publicKey).toString("hex"));
 console.debug("Address:", defaultSender.toString());
 
 await bootstrap();
+
+const quote = await client.getQuote(key.publicKey);
+const eventLogs: any[] = JSON.parse(quote.event_log);
+const imr0 = eventLogs.filter((l) => l.imr === 0).map((l) => l.event);
+const imr1 = eventLogs.filter((l) => l.imr === 1).map((l) => l.event);
+const imr2 = eventLogs.filter((l) => l.imr === 2).map((l) => l.event);
+const imr3 = eventLogs.filter((l) => l.imr === 3).map((l) => l.event);
+console.debug("IMR0 Events:", imr0.length);
+console.debug("IMR1 Events:", imr1.length);
+console.debug("IMR2 Events:", imr2.length);
+console.debug("IMR3 Events:", imr3.length);
+console.debug("IMR3:", imr3);
 
 const app = express();
 const PORT = 3000;

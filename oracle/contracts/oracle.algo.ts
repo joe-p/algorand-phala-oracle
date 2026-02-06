@@ -32,6 +32,9 @@ export type Sha384Digest = bytes<48>;
 export type Proof = bytes<0>;
 
 export type CommittedInputs = {
+  rtmr0: Sha384Digest;
+  rtmr1: Sha384Digest;
+  rtmr2: Sha384Digest;
   rtmr3: Sha384Digest;
   pubkey: bytes32;
   composeHash: bytes32;
@@ -50,6 +53,10 @@ export class Oracle extends Contract {
   /** The ed25519 public key the app will use to submit data */
   pubkey = GlobalState<bytes32>();
 
+  rtmr0 = GlobalState<Sha384Digest>();
+  rtmr1 = GlobalState<Sha384Digest>();
+  rtmr2 = GlobalState<Sha384Digest>();
+
   /** The Runtime Measurement Register 3 value.
    * See https://docs.phala.com/phala-cloud/attestation/verify-your-application#advanced-verification
    */
@@ -59,7 +66,10 @@ export class Oracle extends Contract {
     signals: Signals,
     committedInputs: CommittedInputs,
   ) {
-    const toBeHashed = committedInputs.rtmr3
+    const toBeHashed = committedInputs.rtmr0
+      .concat(committedInputs.rtmr1)
+      .concat(committedInputs.rtmr2)
+      .concat(committedInputs.rtmr3)
       .concat(committedInputs.pubkey)
       .concat(committedInputs.composeHash)
       .concat(committedInputs.appID);
@@ -105,6 +115,9 @@ export class Oracle extends Contract {
     this.pubkey.value = committedInputs.pubkey;
     this.appID.value = committedInputs.appID;
     this.composeHash.value = committedInputs.composeHash;
+    this.rtmr0.value = committedInputs.rtmr0;
+    this.rtmr1.value = committedInputs.rtmr1;
+    this.rtmr2.value = committedInputs.rtmr2;
 
     this.updatePubkeyAndRtmr3(signals, committedInputs);
   }
