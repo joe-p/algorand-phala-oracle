@@ -125,17 +125,6 @@ const bootstrap = async () => {
       }),
     },
   });
-
-  await appClient.send.addFact({
-    args: {
-      fact: "Cats are cool",
-      coverFeeTxn: await appClient.params.coverFee({
-        args: [],
-        staticFee: microAlgo(0),
-      }),
-    },
-    staticFee: microAlgo(3_000),
-  });
 };
 
 console.debug("Public Key:", Buffer.from(key.publicKey).toString("hex"));
@@ -157,12 +146,15 @@ console.debug("IMR3:", imr3);
 
 const factEveryBlock = async () => {
   let round = (await algorand.client.algod.status().do()).lastRound;
+  const { fact } = (await (
+    await fetch("https://catfact.ninja/fact")
+  ).json()) as Record<string, string>;
 
   while (true) {
     console.debug(`Round ${round}: Adding fact...`);
     await appClient.send.addFact({
       args: {
-        fact: "Cats are cool",
+        fact: fact!,
         coverFeeTxn: await appClient.params.coverFee({
           args: [],
           staticFee: microAlgo(0),
