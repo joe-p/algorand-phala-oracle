@@ -1,15 +1,24 @@
 import {
   assert,
   BoxMap,
-  Bytes,
   Contract,
   GlobalState,
+  itxn,
 } from "@algorandfoundation/algorand-typescript";
 
-import type { bytes, uint64 } from "@algorandfoundation/algorand-typescript";
-import { Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
+import type {
+  bytes,
+  gtxn,
+  uint64,
+} from "@algorandfoundation/algorand-typescript";
 import {
+  methodSelector,
+  Uint256,
+} from "@algorandfoundation/algorand-typescript/arc4";
+import {
+  GITxn,
   Global,
+  GTxn,
   sha256,
   Txn,
 } from "@algorandfoundation/algorand-typescript/op";
@@ -77,8 +86,21 @@ export class Oracle extends Contract {
     );
   }
 
-  bootstrap(signals: Signals, _proof: Proof, committedInputs: CommittedInputs) {
+  protected assertFeeCovered(coverFeeTxn: gtxn.ApplicationCallTxn) {
+    assert(
+      coverFeeTxn.appArgs(0) === methodSelector(this.coverFee),
+      "Invalid cover fee txn",
+    );
+  }
+
+  bootstrap(
+    signals: Signals,
+    _proof: Proof,
+    committedInputs: CommittedInputs,
+    coverFeeTxn: gtxn.ApplicationCallTxn,
+  ) {
     assert(!this.appID.hasValue, "Contract already bootstrapped");
+    this.assertFeeCovered(coverFeeTxn);
 
     this.pubkey.value = committedInputs.pubkey;
     this.appID.value = committedInputs.appID;
@@ -86,13 +108,39 @@ export class Oracle extends Contract {
 
     this.updatePubkeyAndRtmr3(signals, committedInputs);
   }
+
+  coverFee() {
+    const gindex: uint64 = Txn.groupIndex + 1;
+
+    const method = GTxn.applicationArgs(gindex, 0);
+    let amount = GTxn.fee(gindex);
+
+    assert(GTxn.applicationId(gindex) === Global.currentApplicationId);
+    assert(method !== methodSelector(this.coverFee));
+
+    if (method === methodSelector(this.bootstrap)) {
+      amount += Global.minBalance;
+    } else {
+      this.assertSenderIsPhalaApp();
+    }
+
+    itxn
+      .payment({
+        receiver: Txn.sender,
+        amount,
+      })
+      .submit();
+  }
 }
 
 export class CatFactsOracle extends Oracle {
   facts = BoxMap<uint64, string>({ keyPrefix: "" });
 
-  addFact(fact: string) {
+  addFact(coverFeeTxn: gtxn.ApplicationCallTxn, fact: string) {
     this.assertSenderIsPhalaApp();
+    this.assertFeeCovered(coverFeeTxn);
+
+    assert(coverFeeTxn.appArgs(0) === methodSelector(this.coverFee));
 
     this.facts(Global.round).value = fact;
   }

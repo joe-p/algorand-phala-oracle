@@ -3,7 +3,11 @@ import { sha256 } from "@noble/hashes/sha2";
 import { DstackClient } from "@phala/dstack-sdk";
 import express from "express";
 import { CatFactsOracleFactory } from "../contracts/clients/CatFactsOracleClient";
-import { AlgorandClient } from "@algorandfoundation/algokit-utils";
+import {
+  algo,
+  AlgorandClient,
+  microAlgo,
+} from "@algorandfoundation/algokit-utils";
 import {
   SignedTransaction,
   type Transaction,
@@ -63,7 +67,6 @@ const defaultSigner: TransactionSigner = async (
 
 const bootstrap = async () => {
   const algorand = AlgorandClient.defaultLocalNet();
-  await algorand.account.ensureFundedFromEnvironment(defaultSender, (1).algo());
 
   const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
     defaultSender: new algosdk.Address(key.publicKey),
@@ -77,14 +80,17 @@ const bootstrap = async () => {
 
   const signal = sha256(concatBytes(rtmr3, key.publicKey, composeHash, appId));
 
-  const { appClient } = await factory.send.create.bare({});
-
+  // In prod another account would create the app
+  const { appClient } = await factory.send.create.bare({
+    sender: await algorand.account.localNetDispenser(),
+  });
   await algorand.account.ensureFundedFromEnvironment(
     appClient.appAddress,
     (1).algo(),
   );
 
   await appClient.send.bootstrap({
+    staticFee: microAlgo(3_000),
     args: {
       signals: [algosdk.bytesToBigInt(signal)],
       _proof: new Uint8Array(0),
@@ -94,10 +100,23 @@ const bootstrap = async () => {
         composeHash,
         appId: appId,
       },
+      coverFeeTxn: await appClient.params.coverFee({
+        args: [],
+        staticFee: microAlgo(0),
+      }),
     },
   });
 
-  await appClient.send.addFact({ args: { fact: "Cats are cool" } });
+  await appClient.send.addFact({
+    args: {
+      fact: "Cats are cool",
+      coverFeeTxn: await appClient.params.coverFee({
+        args: [],
+        staticFee: microAlgo(0),
+      }),
+    },
+    staticFee: microAlgo(3_000),
+  });
 };
 
 console.debug("Public Key:", Buffer.from(key.publicKey).toString("hex"));
