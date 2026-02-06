@@ -47,18 +47,31 @@ export class Oracle extends Contract {
    */
   composeHash = GlobalState<bytes32>();
 
-  /** The Phala application ID. Note that this is NOT the digest from the event log, this is the app ID itself */
+  /** The Phala application ID. We need to anchor against the app to prevent multiple apps contending to interact with the contract */
   appID = GlobalState<PhalaAppID>();
 
-  /** The ed25519 public key the app will use to submit data */
+  /** The ed25519 public key the app will use to submit data. This will rotate each time the app is restarted */
   pubkey = GlobalState<bytes32>();
 
+  /** The Runtime Measurement Register for virtual hardware */
   rtmr0 = GlobalState<Sha384Digest>();
+
+  /** The Runtime Measurement Register for the kernel */
   rtmr1 = GlobalState<Sha384Digest>();
+
+  /** The Runtime Measurement Register for the kernel cmdline and initrd */
   rtmr2 = GlobalState<Sha384Digest>();
 
-  /** The Runtime Measurement Register 3 value.
-   * See https://docs.phala.com/phala-cloud/attestation/verify-your-application#advanced-verification
+  /** The Runtime Measurement Register for the following application events:
+   * - system-preparing
+   * - app-id
+   * - compose-hash
+   * - instance-id
+   * - boot-mr-done
+   * - os-image-hash
+   * - key-provider
+   * - storage-fs
+   * - system-read
    */
   rmtr3 = GlobalState<Sha384Digest>();
 
