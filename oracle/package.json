@@ -5,6 +5,8 @@
   "main": "index.js",
   "scripts": {
     "compile": "npx @algorandfoundation/puya-ts contracts",
+    "generate": "algokit generate client --output contracts/clients/{contract_name}Client.ts contracts/out",
+    "build": "pnpm run compile && pnpm run generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -13,6 +15,7 @@
   "packageManager": "pnpm@10.22.0",
   "type": "module",
   "devDependencies": {
+    "@algorandfoundation/algokit-client-generator": "^6.0.1",
     "@algorandfoundation/algorand-typescript": "^1.1.0",
     "@types/express": "^5.0.6",
     "prettier": "^3.8.1",
@@ -20,9 +23,11 @@
     "typescript": "^5.9.3"
   },
   "dependencies": {
+    "@algorandfoundation/algokit-utils": "^9.2.0",
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "1.8.0",
     "@phala/dstack-sdk": "^0.5.7",
+    "algosdk": "^3.5.2",
     "express": "^5.2.1"
   }
 }

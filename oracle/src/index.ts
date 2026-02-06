@@ -1,11 +1,18 @@
 import { ed25519 } from "@noble/curves/ed25519.js";
-import { sha384 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2";
 import { DstackClient } from "@phala/dstack-sdk";
 import express from "express";
+import { CatFactsOracleFactory } from "../contracts/clients/CatFactsOracleClient";
+import { AlgorandClient } from "@algorandfoundation/algokit-utils";
+import {
+  SignedTransaction,
+  type Transaction,
+  type TransactionSigner,
+} from "algosdk";
+import * as algosdk from "algosdk";
+import { concatBytes } from "@noble/curves/utils.js";
 
-import { concatBytes, utf8ToBytes } from "@noble/hashes/utils";
-
-const DSTACK_RUNTIME_EVENT_TYPE = 0x08000001;
+// const DSTACK_RUNTIME_EVENT_TYPE = 0x08000001;
 
 /**
  * Calculate the digest for a dstack runtime event.
@@ -41,30 +48,62 @@ const DSTACK_RUNTIME_EVENT_TYPE = 0x08000001;
 
 const client = new DstackClient("../dstack/sdk/simulator/dstack.sock");
 const key = ed25519.keygen();
+const defaultSender = new algosdk.Address(key.publicKey);
+const defaultSigner: TransactionSigner = async (
+  txns: Transaction[],
+  _,
+): Promise<Uint8Array[]> => {
+  return txns.map((txn) => {
+    const txBytes = txn.bytesToSign();
+    const sig = ed25519.sign(txBytes, key.secretKey);
+    const signedTxn: SignedTransaction = new SignedTransaction({ txn, sig });
+    return algosdk.encodeMsgpack(signedTxn);
+  });
+};
+
+const bootstrap = async () => {
+  const algorand = AlgorandClient.defaultLocalNet();
+  await algorand.account.ensureFundedFromEnvironment(defaultSender, (1).algo());
+
+  const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
+    defaultSender: new algosdk.Address(key.publicKey),
+    defaultSigner,
+  });
+
+  const info = await client.info();
+  const appId = new Uint8Array(Buffer.from(info.app_id, "hex"));
+  const composeHash = new Uint8Array(Buffer.from(info.compose_hash, "hex"));
+  const rtmr3 = new Uint8Array(48);
+
+  const signal = sha256(concatBytes(rtmr3, key.publicKey, composeHash, appId));
+
+  const { appClient } = await factory.send.create.bare({});
+
+  await algorand.account.ensureFundedFromEnvironment(
+    appClient.appAddress,
+    (1).algo(),
+  );
+
+  await appClient.send.bootstrap({
+    args: {
+      signals: [algosdk.bytesToBigInt(signal)],
+      _proof: new Uint8Array(0),
+      committedInputs: {
+        rtmr3,
+        pubkey: key.publicKey,
+        composeHash,
+        appId: appId,
+      },
+    },
+  });
+
+  await appClient.send.addFact({ args: { fact: "Cats are cool" } });
+};
+
 console.debug("Public Key:", Buffer.from(key.publicKey).toString("hex"));
+console.debug("Address:", defaultSender.toString());
 
-const eventLog: Record<string, string>[] = JSON.parse(
-  (await client.getQuote("")).event_log,
-);
-
-const composeHashDigestHex = eventLog.find(
-  (e) => e.event === "compose-hash",
-)?.digest;
-
-if (!composeHashDigestHex) {
-  throw new Error("Compose hash digest not found in event log");
-}
-
-const appIdDigestHex = eventLog.find((e) => e.event === "app-id")?.digest;
-
-if (!appIdDigestHex) {
-  throw new Error("App ID digest not found in event log");
-}
-
-const info = await client.info();
-
-const appId = new Uint8Array(Buffer.from(info.app_id, "hex"));
-console.debug("App ID len", appId.byteLength);
+await bootstrap();
 
 const app = express();
 const PORT = 3000;
@@ -76,10 +115,6 @@ app.get("/quote", async (_, res) => {
 
 app.get("/key", (_, res) => {
   res.send(key.publicKey);
-});
-
-app.get("/bootstrap", async (_, res) => {
-  res.send();
 });
 
 app.listen(PORT, () => {

@@ -37,3 +37,4 @@ target/
 oracle/contracts/out/*
 !oracle/contracts/out/*.approval.teal
 !oracle/contracts/out/*.arc56.json
+oracle/contracts/clients/

@@ -1,0 +1,208 @@
+{
+    "name": "Oracle",
+    "structs": {
+        "CommittedInputs": [
+            {
+                "name": "rtmr3",
+                "type": "byte[48]"
+            },
+            {
+                "name": "pubkey",
+                "type": "byte[32]"
+            },
+            {
+                "name": "composeHash",
+                "type": "byte[32]"
+            },
+            {
+                "name": "appID",
+                "type": "byte[20]"
+            }
+        ]
+    },
+    "methods": [
+        {
+            "name": "bootstrap",
+            "args": [
+                {
+                    "type": "uint256[]",
+                    "name": "signals"
+                },
+                {
+                    "type": "byte[0]",
+                    "name": "_proof"
+                },
+                {
+                    "type": "(byte[48],byte[32],byte[32],byte[20])",
+                    "struct": "CommittedInputs",
+                    "name": "committedInputs"
+                }
+            ],
+            "returns": {
+                "type": "void"
+            },
+            "actions": {
+                "create": [],
+                "call": [
+                    "NoOp"
+                ]
+            },
+            "readonly": false,
+            "events": [],
+            "recommendations": {}
+        }
+    ],
+    "arcs": [
+        22,
+        28
+    ],
+    "networks": {},
+    "state": {
+        "schema": {
+            "global": {
+                "ints": 0,
+                "bytes": 4
+            },
+            "local": {
+                "ints": 0,
+                "bytes": 0
+            }
+        },
+        "keys": {
+            "global": {
+                "composeHash": {
+                    "keyType": "AVMString",
+                    "valueType": "AVMBytes",
+                    "key": "Y29tcG9zZUhhc2g=",
+                    "desc": "The hash of the Docker compose file.\nSee https://github.com/Dstack-TEE/dstack/blob/63f30ce7eb78ba940e8bb36aeaf57b1aa79b6e5c/sdk/js/src/get-compose-hash.ts#L102"
+                },
+                "appID": {
+                    "keyType": "AVMString",
+                    "valueType": "AVMBytes",
+                    "key": "YXBwSUQ=",
+                    "desc": "The Phala application ID. Note that this is NOT the digest from the event log, this is the app ID itself"
+                },
+                "pubkey": {
+                    "keyType": "AVMString",
+                    "valueType": "AVMBytes",
+                    "key": "cHVia2V5",
+                    "desc": "The ed25519 public key the app will use to submit data"
+                },
+                "rmtr3": {
+                    "keyType": "AVMString",
+                    "valueType": "AVMBytes",
+                    "key": "cm10cjM=",
+                    "desc": "The Runtime Measurement Register 3 value.\nSee https://docs.phala.com/phala-cloud/attestation/verify-your-application#advanced-verification"
+                }
+            },
+            "local": {},
+            "box": {}
+        },
+        "maps": {
+            "global": {},
+            "local": {},
+            "box": {}
+        }
+    },
+    "bareActions": {
+        "create": [
+            "NoOp"
+        ],
+        "call": []
+    },
+    "sourceInfo": {
+        "approval": {
+            "sourceInfo": [
+                {
+                    "pc": [
+                        99
+                    ],
+                    "errorMessage": "Contract already bootstrapped"
+                },
+                {
+                    "pc": [
+                        158
+                    ],
+                    "errorMessage": "Invalid signals length"
+                },
+                {
+                    "pc": [
+                        57
+                    ],
+                    "errorMessage": "OnCompletion must be NoOp && can only call when creating"
+                },
+                {
+                    "pc": [
+                        46
+                    ],
+                    "errorMessage": "OnCompletion must be NoOp && can only call when not creating"
+                },
+                {
+                    "pc": [
+                        173
+                    ],
+                    "errorMessage": "Phala App ID mismatch"
+                },
+                {
+                    "pc": [
+                        165
+                    ],
+                    "errorMessage": "Signal mismatch"
+                },
+                {
+                    "pc": [
+                        169
+                    ],
+                    "errorMessage": "check GlobalState exists"
+                },
+                {
+                    "pc": [
+                        65
+                    ],
+                    "errorMessage": "invalid array length header"
+                },
+                {
+                    "pc": [
+                        76
+                    ],
+                    "errorMessage": "invalid number of bytes for arc4.dynamic_array<arc4.uint256>"
+                },
+                {
+                    "pc": [
+                        82
+                    ],
+                    "errorMessage": "invalid number of bytes for arc4.static_array<arc4.uint8, 0>"
+                },
+                {
+                    "pc": [
+                        92
+                    ],
+                    "errorMessage": "invalid number of bytes for contracts/oracle.algo.ts::CommittedInputs"
+                }
+            ],
+            "pcOffsetMethod": "none"
+        },
+        "clear": {
+            "sourceInfo": [],
+            "pcOffsetMethod": "none"
+        }
+    },
+    "source": {
+        "approval": "I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYXJjNC9pbmRleC5kLnRzOjpDb250cmFjdC5hcHByb3ZhbFByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBpbnRjYmxvY2sgMCAxIDIKICAgIGJ5dGVjYmxvY2sgImFwcElEIiAicHVia2V5IgogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjMyCiAgICAvLyBleHBvcnQgY2xhc3MgT3JhY2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE51bUFwcEFyZ3MKICAgIGJ6IG1haW5fX19hbGdvdHNfXy5kZWZhdWx0Q3JlYXRlQDUKICAgIHB1c2hieXRlcyAweGQyMTUxYWE0IC8vIG1ldGhvZCAiYm9vdHN0cmFwKHVpbnQyNTZbXSxieXRlWzBdLChieXRlWzQ4XSxieXRlWzMyXSxieXRlWzMyXSxieXRlWzIwXSkpdm9pZCIKICAgIHR4bmEgQXBwbGljYXRpb25BcmdzIDAKICAgIG1hdGNoIG1haW5fYm9vdHN0cmFwX3JvdXRlQDMKICAgIGVycgoKbWFpbl9ib290c3RyYXBfcm91dGVAMzoKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo4MAogICAgLy8gYm9vdHN0cmFwKHNpZ25hbHM6IFNpZ25hbHMsIF9wcm9vZjogUHJvb2YsIGNvbW1pdHRlZElucHV0czogQ29tbWl0dGVkSW5wdXRzKSB7CiAgICB0eG4gT25Db21wbGV0aW9uCiAgICAhCiAgICB0eG4gQXBwbGljYXRpb25JRAogICAgJiYKICAgIGFzc2VydCAvLyBPbkNvbXBsZXRpb24gbXVzdCBiZSBOb09wICYmIGNhbiBvbmx5IGNhbGwgd2hlbiBub3QgY3JlYXRpbmcKICAgIGIgYm9vdHN0cmFwCgptYWluX19fYWxnb3RzX18uZGVmYXVsdENyZWF0ZUA1OgogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjMyCiAgICAvLyBleHBvcnQgY2xhc3MgT3JhY2xlIGV4dGVuZHMgQ29udHJhY3QgewogICAgdHhuIE9uQ29tcGxldGlvbgogICAgIQogICAgdHhuIEFwcGxpY2F0aW9uSUQKICAgICEKICAgICYmCiAgICBhc3NlcnQgLy8gT25Db21wbGV0aW9uIG11c3QgYmUgTm9PcCAmJiBjYW4gb25seSBjYWxsIHdoZW4gY3JlYXRpbmcKICAgIGludGNfMSAvLyAxCiAgICByZXR1cm4KCgovLyBjb250cmFjdHMvb3JhY2xlLmFsZ28udHM6Ok9yYWNsZS5ib290c3RyYXBbcm91dGluZ10oKSAtPiB2b2lkOgpib290c3RyYXA6CiAgICAvLyBjb250cmFjdHMvb3JhY2xlLmFsZ28udHM6ODAKICAgIC8vIGJvb3RzdHJhcChzaWduYWxzOiBTaWduYWxzLCBfcHJvb2Y6IFByb29mLCBjb21taXR0ZWRJbnB1dHM6IENvbW1pdHRlZElucHV0cykgewogICAgdHhuYSBBcHBsaWNhdGlvbkFyZ3MgMQogICAgZHVwCiAgICBpbnRjXzAgLy8gMAogICAgZXh0cmFjdF91aW50MTYgLy8gb24gZXJyb3I6IGludmFsaWQgYXJyYXkgbGVuZ3RoIGhlYWRlcgogICAgZHVwCiAgICBwdXNoaW50IDMyIC8vIDMyCiAgICAqCiAgICBpbnRjXzIgLy8gMgogICAgKwogICAgZGlnIDIKICAgIGxlbgogICAgPT0KICAgIGFzc2VydCAvLyBpbnZhbGlkIG51bWJlciBvZiBieXRlcyBmb3IgYXJjNC5keW5hbWljX2FycmF5PGFyYzQudWludDI1Nj4KICAgIHR4bmEgQXBwbGljYXRpb25BcmdzIDIKICAgIGxlbgogICAgIQogICAgYXNzZXJ0IC8vIGludmFsaWQgbnVtYmVyIG9mIGJ5dGVzIGZvciBhcmM0LnN0YXRpY19hcnJheTxhcmM0LnVpbnQ4LCAwPgogICAgdHhuYSBBcHBsaWNhdGlvbkFyZ3MgMwogICAgZHVwCiAgICBsZW4KICAgIHB1c2hpbnQgMTMyIC8vIDEzMgogICAgPT0KICAgIGFzc2VydCAvLyBpbnZhbGlkIG51bWJlciBvZiBieXRlcyBmb3IgY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjpDb21taXR0ZWRJbnB1dHMKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo4MQogICAgLy8gYXNzZXJ0KCF0aGlzLmFwcElELmhhc1ZhbHVlLCAiQ29udHJhY3QgYWxyZWFkeSBib290c3RyYXBwZWQiKTsKICAgIGludGNfMCAvLyAwCiAgICAvLyBjb250cmFjdHMvb3JhY2xlLmFsZ28udHM6MzkKICAgIC8vIGFwcElEID0gR2xvYmFsU3RhdGU8UGhhbGFBcHBJRD4oKTsKICAgIGJ5dGVjXzAgLy8gImFwcElEIgogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjgxCiAgICAvLyBhc3NlcnQoIXRoaXMuYXBwSUQuaGFzVmFsdWUsICJDb250cmFjdCBhbHJlYWR5IGJvb3RzdHJhcHBlZCIpOwogICAgYXBwX2dsb2JhbF9nZXRfZXgKICAgIGJ1cnkgMQogICAgIQogICAgYXNzZXJ0IC8vIENvbnRyYWN0IGFscmVhZHkgYm9vdHN0cmFwcGVkCiAgICAvLyBjb250cmFjdHMvb3JhY2xlLmFsZ28udHM6ODMKICAgIC8vIHRoaXMucHVia2V5LnZhbHVlID0gY29tbWl0dGVkSW5wdXRzLnB1YmtleTsKICAgIGR1cAogICAgZXh0cmFjdCA0OCAzMgogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjQyCiAgICAvLyBwdWJrZXkgPSBHbG9iYWxTdGF0ZTxieXRlczMyPigpOwogICAgYnl0ZWNfMSAvLyAicHVia2V5IgogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjgzCiAgICAvLyB0aGlzLnB1YmtleS52YWx1ZSA9IGNvbW1pdHRlZElucHV0cy5wdWJrZXk7CiAgICBkaWcgMQogICAgYXBwX2dsb2JhbF9wdXQKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo4NAogICAgLy8gdGhpcy5hcHBJRC52YWx1ZSA9IGNvbW1pdHRlZElucHV0cy5hcHBJRDsKICAgIGRpZyAxCiAgICBleHRyYWN0IDExMiAyMAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjM5CiAgICAvLyBhcHBJRCA9IEdsb2JhbFN0YXRlPFBoYWxhQXBwSUQ+KCk7CiAgICBieXRlY18wIC8vICJhcHBJRCIKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo4NAogICAgLy8gdGhpcy5hcHBJRC52YWx1ZSA9IGNvbW1pdHRlZElucHV0cy5hcHBJRDsKICAgIGRpZyAxCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjg1CiAgICAvLyB0aGlzLmNvbXBvc2VIYXNoLnZhbHVlID0gY29tbWl0dGVkSW5wdXRzLmNvbXBvc2VIYXNoOwogICAgZGlnIDIKICAgIGV4dHJhY3QgODAgMzIKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czozNgogICAgLy8gY29tcG9zZUhhc2ggPSBHbG9iYWxTdGF0ZTxieXRlczMyPigpOwogICAgcHVzaGJ5dGVzICJjb21wb3NlSGFzaCIKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo4NQogICAgLy8gdGhpcy5jb21wb3NlSGFzaC52YWx1ZSA9IGNvbW1pdHRlZElucHV0cy5jb21wb3NlSGFzaDsKICAgIGRpZyAxCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjUzCiAgICAvLyBjb25zdCB0b0JlSGFzaGVkID0gY29tbWl0dGVkSW5wdXRzLnJ0bXIzCiAgICB1bmNvdmVyIDMKICAgIGV4dHJhY3QgMCA0OAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjUzLTU0CiAgICAvLyBjb25zdCB0b0JlSGFzaGVkID0gY29tbWl0dGVkSW5wdXRzLnJ0bXIzCiAgICAvLyAgIC5jb25jYXQoY29tbWl0dGVkSW5wdXRzLnB1YmtleSkKICAgIGR1cAogICAgZGlnIDQKICAgIGNvbmNhdAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjUzLTU1CiAgICAvLyBjb25zdCB0b0JlSGFzaGVkID0gY29tbWl0dGVkSW5wdXRzLnJ0bXIzCiAgICAvLyAgIC5jb25jYXQoY29tbWl0dGVkSW5wdXRzLnB1YmtleSkKICAgIC8vICAgLmNvbmNhdChjb21taXR0ZWRJbnB1dHMuY29tcG9zZUhhc2gpCiAgICB1bmNvdmVyIDIKICAgIGNvbmNhdAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjUzLTU2CiAgICAvLyBjb25zdCB0b0JlSGFzaGVkID0gY29tbWl0dGVkSW5wdXRzLnJ0bXIzCiAgICAvLyAgIC5jb25jYXQoY29tbWl0dGVkSW5wdXRzLnB1YmtleSkKICAgIC8vICAgLmNvbmNhdChjb21taXR0ZWRJbnB1dHMuY29tcG9zZUhhc2gpCiAgICAvLyAgIC5jb25jYXQoY29tbWl0dGVkSW5wdXRzLmFwcElEKTsKICAgIGRpZyAyCiAgICBjb25jYXQKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo1NwogICAgLy8gY29uc3QgY29tcHV0ZWRTaWduYWwgPSBzaGEyNTYodG9CZUhhc2hlZCk7CiAgICBzaGEyNTYKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo1OQogICAgLy8gYXNzZXJ0KHNpZ25hbHMubGVuZ3RoICE9PSAyLCAiSW52YWxpZCBzaWduYWxzIGxlbmd0aCIpOwogICAgdW5jb3ZlciA0CiAgICBpbnRjXzIgLy8gMgogICAgIT0KICAgIGFzc2VydCAvLyBJbnZhbGlkIHNpZ25hbHMgbGVuZ3RoCiAgICAvLyBjb250cmFjdHMvb3JhY2xlLmFsZ28udHM6NjAKICAgIC8vIGFzc2VydChzaWduYWxzLmF0KDApIS5ieXRlcyA9PT0gY29tcHV0ZWRTaWduYWwsICJTaWduYWwgbWlzbWF0Y2giKTsKICAgIHVuY292ZXIgNAogICAgZXh0cmFjdCAyIDMyCiAgICA9PQogICAgYXNzZXJ0IC8vIFNpZ25hbCBtaXNtYXRjaAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjY3CiAgICAvLyBhc3NlcnQoY29tbWl0dGVkSW5wdXRzLmFwcElEID09PSB0aGlzLmFwcElELnZhbHVlLCAiUGhhbGEgQXBwIElEIG1pc21hdGNoIik7CiAgICBpbnRjXzAgLy8gMAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjM5CiAgICAvLyBhcHBJRCA9IEdsb2JhbFN0YXRlPFBoYWxhQXBwSUQ+KCk7CiAgICBieXRlY18wIC8vICJhcHBJRCIKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo2NwogICAgLy8gYXNzZXJ0KGNvbW1pdHRlZElucHV0cy5hcHBJRCA9PT0gdGhpcy5hcHBJRC52YWx1ZSwgIlBoYWxhIEFwcCBJRCBtaXNtYXRjaCIpOwogICAgYXBwX2dsb2JhbF9nZXRfZXgKICAgIGFzc2VydCAvLyBjaGVjayBHbG9iYWxTdGF0ZSBleGlzdHMKICAgIHVuY292ZXIgMgogICAgPT0KICAgIGFzc2VydCAvLyBQaGFsYSBBcHAgSUQgbWlzbWF0Y2gKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo0MgogICAgLy8gcHVia2V5ID0gR2xvYmFsU3RhdGU8Ynl0ZXMzMj4oKTsKICAgIGJ5dGVjXzEgLy8gInB1YmtleSIKICAgIC8vIGNvbnRyYWN0cy9vcmFjbGUuYWxnby50czo2OQogICAgLy8gdGhpcy5wdWJrZXkudmFsdWUgPSBjb21taXR0ZWRJbnB1dHMucHVia2V5OwogICAgdW5jb3ZlciAyCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjQ3CiAgICAvLyBybXRyMyA9IEdsb2JhbFN0YXRlPFNoYTM4NERpZ2VzdD4oKTsKICAgIHB1c2hieXRlcyAicm10cjMiCiAgICAvLyBjb250cmFjdHMvb3JhY2xlLmFsZ28udHM6NzAKICAgIC8vIHRoaXMucm10cjMudmFsdWUgPSBjb21taXR0ZWRJbnB1dHMucnRtcjM7CiAgICBzd2FwCiAgICBhcHBfZ2xvYmFsX3B1dAogICAgLy8gY29udHJhY3RzL29yYWNsZS5hbGdvLnRzOjgwCiAgICAvLyBib290c3RyYXAoc2lnbmFsczogU2lnbmFscywgX3Byb29mOiBQcm9vZiwgY29tbWl0dGVkSW5wdXRzOiBDb21taXR0ZWRJbnB1dHMpIHsKICAgIGludGNfMSAvLyAxCiAgICByZXR1cm4K",
+        "clear": "I3ByYWdtYSB2ZXJzaW9uIDExCiNwcmFnbWEgdHlwZXRyYWNrIGZhbHNlCgovLyBAYWxnb3JhbmRmb3VuZGF0aW9uL2FsZ29yYW5kLXR5cGVzY3JpcHQvYmFzZS1jb250cmFjdC5kLnRzOjpCYXNlQ29udHJhY3QuY2xlYXJTdGF0ZVByb2dyYW0oKSAtPiB1aW50NjQ6Cm1haW46CiAgICBwdXNoaW50IDEgLy8gMQogICAgcmV0dXJuCg=="
+    },
+    "byteCode": {
+        "approval": "CyADAAECJgIFYXBwSUQGcHVia2V5MRtBABiABNIVGqQ2GgCOAQABADEZFDEYEERCAAoxGRQxGBQQRCNDNhoBSSJZSYEgCyQISwIVEkQ2GgIVFEQ2GgNJFYGEARJEIihlRQEURElXMCApSwFnSwFXcBQoSwFnSwJXUCCAC2NvbXBvc2VIYXNoSwFnTwNXADBJSwRQTwJQSwJQAU8EJBNETwRXAiASRCIoZURPAhJEKU8CZ4AFcm10cjNMZyND",
+        "clear": "C4EBQw=="
+    },
+    "compilerInfo": {
+        "compiler": "puya",
+        "compilerVersion": {
+            "major": 5,
+            "minor": 3,
+            "patch": 2
+        }
+    },
+    "events": [],
+    "templateVariables": {}
+}

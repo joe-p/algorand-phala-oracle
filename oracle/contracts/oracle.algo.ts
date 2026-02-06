@@ -1,13 +1,18 @@
 import {
   assert,
+  BoxMap,
   Bytes,
   Contract,
   GlobalState,
 } from "@algorandfoundation/algorand-typescript";
 
-import type { bytes } from "@algorandfoundation/algorand-typescript";
+import type { bytes, uint64 } from "@algorandfoundation/algorand-typescript";
 import { Uint256 } from "@algorandfoundation/algorand-typescript/arc4";
-import { sha256 } from "@algorandfoundation/algorand-typescript/op";
+import {
+  Global,
+  sha256,
+  Txn,
+} from "@algorandfoundation/algorand-typescript/op";
 
 export type bytes32 = bytes<32>;
 export type PhalaAppID = bytes<20>;
@@ -24,7 +29,7 @@ export type CommittedInputs = {
   appID: PhalaAppID;
 };
 
-export class OracleContract extends Contract {
+export class Oracle extends Contract {
   /** The hash of the Docker compose file.
    * See https://github.com/Dstack-TEE/dstack/blob/63f30ce7eb78ba940e8bb36aeaf57b1aa79b6e5c/sdk/js/src/get-compose-hash.ts#L102
    */
@@ -41,7 +46,7 @@ export class OracleContract extends Contract {
    */
   rmtr3 = GlobalState<Sha384Digest>();
 
-  private updatePubkeyAndRtmr3(
+  protected updatePubkeyAndRtmr3(
     signals: Signals,
     committedInputs: CommittedInputs,
   ) {
@@ -65,15 +70,30 @@ export class OracleContract extends Contract {
     this.rmtr3.value = committedInputs.rtmr3;
   }
 
-  createApplication(
-    signals: Signals,
-    _proof: Proof,
-    committedInputs: CommittedInputs,
-  ) {
+  protected assertSenderIsPhalaApp() {
+    assert(
+      Txn.sender.bytes === this.pubkey.value,
+      "Sender is not the registered app",
+    );
+  }
+
+  bootstrap(signals: Signals, _proof: Proof, committedInputs: CommittedInputs) {
+    assert(!this.appID.hasValue, "Contract already bootstrapped");
+
     this.pubkey.value = committedInputs.pubkey;
     this.appID.value = committedInputs.appID;
     this.composeHash.value = committedInputs.composeHash;
 
     this.updatePubkeyAndRtmr3(signals, committedInputs);
+  }
+}
+
+export class CatFactsOracle extends Oracle {
+  facts = BoxMap<uint64, string>({ keyPrefix: "" });
+
+  addFact(fact: string) {
+    this.assertSenderIsPhalaApp();
+
+    this.facts(Global.round).value = fact;
   }
 }
