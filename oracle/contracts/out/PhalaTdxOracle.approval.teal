@@ -6,7 +6,7 @@ main:
     intcblock 0 1 2
     bytecblock 0x7c8a51dd "appID" 0xd1114f73 "composeHash" "rtmr0" "rtmr1" "rtmr2" "pubkey"
     // contracts/oracle.algo.ts:44
-    // export class Oracle extends Contract {
+    // export class PhalaTdxOracle extends Contract {
     txn NumAppArgs
     bz main___algots__.defaultCreate@9
     txn OnCompletion
@@ -22,7 +22,7 @@ main:
 
 main___algots__.defaultCreate@9:
     // contracts/oracle.algo.ts:44
-    // export class Oracle extends Contract {
+    // export class PhalaTdxOracle extends Contract {
     txn OnCompletion
     !
     txn ApplicationID
@@ -33,7 +33,7 @@ main___algots__.defaultCreate@9:
     return
 
 
-// contracts/oracle.algo.ts::Oracle.bootstrap[routing]() -> void:
+// contracts/oracle.algo.ts::PhalaTdxOracle.bootstrap[routing]() -> void:
 bootstrap:
     // contracts/oracle.algo.ts:119-124
     // bootstrap(
@@ -318,7 +318,7 @@ bootstrap:
     return
 
 
-// contracts/oracle.algo.ts::Oracle.coverFee[routing]() -> void:
+// contracts/oracle.algo.ts::PhalaTdxOracle.coverFee[routing]() -> void:
 coverFee:
     // contracts/oracle.algo.ts:139
     // const gindex: uint64 = Txn.groupIndex + 1;

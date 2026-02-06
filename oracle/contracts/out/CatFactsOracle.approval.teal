@@ -6,7 +6,7 @@ main:
     intcblock 0 1 2 6
     bytecblock 0x7c8a51dd "appID" 0xd1114f73 "composeHash" "rtmr0" "rtmr1" "rtmr2" "pubkey"
     // contracts/oracle.algo.ts:162
-    // export class CatFactsOracle extends Oracle {
+    // export class CatFactsOracle extends PhalaTdxOracle {
     txn NumAppArgs
     bz main___algots__.defaultCreate@10
     txn OnCompletion
@@ -23,7 +23,7 @@ main:
 
 main___algots__.defaultCreate@10:
     // contracts/oracle.algo.ts:162
-    // export class CatFactsOracle extends Oracle {
+    // export class CatFactsOracle extends PhalaTdxOracle {
     txn OnCompletion
     !
     txn ApplicationID
@@ -88,7 +88,7 @@ addFact:
     return
 
 
-// contracts/oracle.algo.ts::Oracle.bootstrap[routing]() -> void:
+// contracts/oracle.algo.ts::PhalaTdxOracle.bootstrap[routing]() -> void:
 bootstrap:
     // contracts/oracle.algo.ts:119-124
     // bootstrap(
@@ -373,7 +373,7 @@ bootstrap:
     return
 
 
-// contracts/oracle.algo.ts::Oracle.coverFee[routing]() -> void:
+// contracts/oracle.algo.ts::PhalaTdxOracle.coverFee[routing]() -> void:
 coverFee:
     // contracts/oracle.algo.ts:139
     // const gindex: uint64 = Txn.groupIndex + 1;
@@ -460,7 +460,7 @@ coverFee_else_body@3:
     b coverFee_after_if_else@4
 
 
-// contracts/oracle.algo.ts::Oracle.assertSenderIsPhalaApp() -> void:
+// contracts/oracle.algo.ts::PhalaTdxOracle.assertSenderIsPhalaApp() -> void:
 assertSenderIsPhalaApp:
     // contracts/oracle.algo.ts:107
     // Txn.sender.bytes === this.pubkey.value,

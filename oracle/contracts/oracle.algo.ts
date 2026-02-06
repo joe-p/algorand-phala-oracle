@@ -41,7 +41,7 @@ export type CommittedInputs = {
   appID: PhalaAppID;
 };
 
-export class Oracle extends Contract {
+export class PhalaTdxOracle extends Contract {
   /** The hash of the Docker compose file.
    * See https://github.com/Dstack-TEE/dstack/blob/63f30ce7eb78ba940e8bb36aeaf57b1aa79b6e5c/sdk/js/src/get-compose-hash.ts#L102
    */
@@ -159,7 +159,7 @@ export class Oracle extends Contract {
   }
 }
 
-export class CatFactsOracle extends Oracle {
+export class CatFactsOracle extends PhalaTdxOracle {
   facts = BoxMap<uint64, string>({ keyPrefix: "" });
 
   addFact(coverFeeTxn: gtxn.ApplicationCallTxn, fact: string) {
