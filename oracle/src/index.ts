@@ -101,7 +101,7 @@ const bootstrap = async () => {
     staticFee: microAlgo(3_000),
     args: {
       signals: [algosdk.bytesToBigInt(signal)],
-      _proof: new Uint8Array(0),
+      proof: new Uint8Array(0),
       committedInputs: {
         rtmr0,
         rtmr1,

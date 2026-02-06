@@ -75,7 +75,11 @@ export class PhalaTdxOracle extends Contract {
    */
   rtmr3 = GlobalState<Sha384Digest>();
 
-  protected updatePubkey(signals: Signals, committedInputs: CommittedInputs) {
+  protected updatePubkey(
+    signals: Signals,
+    _proof: Proof,
+    committedInputs: CommittedInputs,
+  ) {
     const toBeHashed = committedInputs.rtmr0
       .concat(committedInputs.rtmr1)
       .concat(committedInputs.rtmr2)
@@ -118,7 +122,7 @@ export class PhalaTdxOracle extends Contract {
 
   bootstrap(
     signals: Signals,
-    _proof: Proof,
+    proof: Proof,
     committedInputs: CommittedInputs,
     coverFeeTxn: gtxn.ApplicationCallTxn,
   ) {
@@ -132,7 +136,7 @@ export class PhalaTdxOracle extends Contract {
     this.rtmr2.value = committedInputs.rtmr2;
     this.rtmr3.value = committedInputs.rtmr3;
 
-    this.updatePubkey(signals, committedInputs);
+    this.updatePubkey(signals, proof, committedInputs);
   }
 
   coverFee() {
