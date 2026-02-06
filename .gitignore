@@ -2,7 +2,6 @@
 node_modules
 
 # output
-out
 dist
 *.tgz
 
@@ -34,3 +33,7 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .DS_Store
 
 target/
+
+oracle/contracts/out/*
+!oracle/contracts/out/*.approval.teal
+!oracle/contracts/out/*.arc56.json

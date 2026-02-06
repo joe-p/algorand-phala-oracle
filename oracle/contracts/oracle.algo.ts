@@ -51,8 +51,8 @@ export class OracleContract extends Contract {
       .concat(committedInputs.appID);
     const computedSignal = sha256(toBeHashed);
 
-    assert(signals.length === 2, "Invalid signals length");
-    assert(signals[0] === new Uint256(computedSignal), "Signal mismatch");
+    assert(signals.length !== 2, "Invalid signals length");
+    assert(signals.at(0)!.bytes === computedSignal, "Signal mismatch");
 
     assert(
       committedInputs.composeHash === this.composeHash.value,
