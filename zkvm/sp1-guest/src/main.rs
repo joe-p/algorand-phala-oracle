@@ -6,12 +6,17 @@ sp1_zkvm::entrypoint!(main);
 
 type EventDigest = [u8; 48];
 
-// NOTE: Collateral verification is skipped in this guest code since we're not using a real TDX
-// server yet
-
 pub fn main() {
     let quote_bytes = sp1_zkvm::io::read::<Vec<u8>>();
     let rtmr3_event_digests_vec = sp1_zkvm::io::read::<Vec<Vec<u8>>>();
+
+    // TODO: verify compose hash and app id against event digest based on index
+    let compose_hash = sp1_zkvm::io::read::<Vec<u8>>();
+    let app_id = sp1_zkvm::io::read::<Vec<u8>>();
+
+    // NOTE: Collateral verification is skipped in this guest code since we're not using a real TDX
+    // server yet
+    //
     // let collateral_bytes = sp1_zkvm::io::read::<Vec<u8>>();
     // let time = sp1_zkvm::io::read::<u64>();
     //
@@ -57,4 +62,6 @@ pub fn main() {
 
     sp1_zkvm::io::commit_slice(&replayed_rtmr);
     sp1_zkvm::io::commit_slice(&report.report_data[..32]);
+    sp1_zkvm::io::commit_slice(&compose_hash);
+    sp1_zkvm::io::commit_slice(&app_id);
 }

@@ -28,6 +28,8 @@ async fn main() {
         .map(|event| hex::decode(&event.digest).expect("should be able to decode digest"))
         .collect::<Vec<Vec<u8>>>();
 
+    // NOTE: Collateral verification is skipped in this host code since we're not using a real TDX
+    //
     // let collateral = get_collateral(PHALA_PCCS_URL, &quote)
     //     .await
     //     .expect("failed to get collateral");
@@ -41,6 +43,11 @@ async fn main() {
     let mut stdin = SP1Stdin::new();
     stdin.write(&quote);
     stdin.write(&rtmr3_event_digests_vec);
+
+    // TODO: Compose hash and app id should be provided by the host environment
+    stdin.write(&vec![] as &Vec<u8>); // compose_hash
+    stdin.write(&vec![] as &Vec<u8>); // app_id
+
     // stdin.write(&borsh::to_vec(&collateral).expect("should be able to serialize collateral"));
     // stdin.write(&now);
 

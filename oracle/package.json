@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "compile": "npx @algorandfoundation/puya-ts contracts",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -12,6 +13,7 @@
   "packageManager": "pnpm@10.22.0",
   "type": "module",
   "devDependencies": {
+    "@algorandfoundation/algorand-typescript": "^1.1.0",
     "@types/express": "^5.0.6",
     "prettier": "^3.8.1",
     "tsx": "^4.21.0",

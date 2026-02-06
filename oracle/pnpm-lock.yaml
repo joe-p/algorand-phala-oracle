@@ -17,13 +17,13 @@ importers:
       '@phala/dstack-sdk':
         specifier: ^0.5.7
         version: 0.5.7(@noble/hashes@1.8.0)(bufferutil@4.1.0)(typescript@5.9.3)(utf-8-validate@5.0.10)
-      dotenv:
-        specifier: ^17.2.3
-        version: 17.2.3
       express:
         specifier: ^5.2.1
         version: 5.2.1
     devDependencies:
+      '@algorandfoundation/algorand-typescript':
+        specifier: ^1.1.0
+        version: 1.1.0(tslib@2.8.1)
       '@types/express':
         specifier: ^5.0.6
         version: 5.0.6
@@ -41,6 +41,11 @@ packages:
 
   '@adraffy/ens-normalize@1.11.1':
     resolution: {integrity: sha512-nhCBV3quEgesuf7c7KYfperqSS14T8bYuvJ8PcLJp6znkZpFc0AuW4qBtr8eKVyPPe/8RSr7sglCWPU5eaxwKQ==}
+
+  '@algorandfoundation/algorand-typescript@1.1.0':
+    resolution: {integrity: sha512-nH2aH3gH2mtW3ow6pjAgPVNjmYxIoYwP7Xh5SUQ2kKsQaP3QUs6I3c+EAAo+Hc5jqS8bF1T23MxpLeWbh+BbKQ==}
+    peerDependencies:
+      tslib: ^2.6.2
 
   '@babel/runtime@7.28.6':
     resolution: {integrity: sha512-05WQkdpL9COIMz4LjTxGpPNCdlpyimKppYNoJ5Di5EUObifl8t4tuLuUBBZEpoLYOmfvIWrsp9fCl0HoPRVTdA==}
@@ -479,10 +484,6 @@ packages:
 
   diffie-hellman@5.0.3:
     resolution: {integrity: sha512-kqag/Nl+f3GwyK25fhUMYj81BUOrZ9IuJsjIcDE5icNM9FJHAVm3VcUDxdLPoQtTuUylWm6ZIknYJwwaPxsUzg==}
-
-  dotenv@17.2.3:
-    resolution: {integrity: sha512-JVUnt+DUIzu87TABbhPmNfVdBDt18BLOWjMUFJMSi/Qqg7NTYtabbvSNJGOJ7afbRuv9D/lngizHtP7QyLQ+9w==}
-    engines: {node: '>=12'}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -994,6 +995,10 @@ snapshots:
   '@adraffy/ens-normalize@1.11.1':
     optional: true
 
+  '@algorandfoundation/algorand-typescript@1.1.0(tslib@2.8.1)':
+    dependencies:
+      tslib: 2.8.1
+
   '@babel/runtime@7.28.6':
     optional: true
 
@@ -1461,8 +1466,6 @@ snapshots:
       bn.js: 4.12.2
       miller-rabin: 4.0.1
       randombytes: 2.1.0
-
-  dotenv@17.2.3: {}
 
   dunder-proto@1.0.1:
     dependencies:
@@ -2012,8 +2015,7 @@ snapshots:
   tr46@0.0.3:
     optional: true
 
-  tslib@2.8.1:
-    optional: true
+  tslib@2.8.1: {}
 
   tsx@4.21.0:
     dependencies:
