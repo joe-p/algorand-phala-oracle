@@ -4,8 +4,8 @@
 // @algorandfoundation/algorand-typescript/arc4/index.d.ts::Contract.approvalProgram() -> uint64:
 main:
     intcblock 0 1 2 6
-    bytecblock 0x7c8a51dd "appID" 0xd1114f73 "composeHash" "rtmr0" "rtmr1" "rtmr2" "pubkey"
-    // contracts/oracle.algo.ts:163
+    bytecblock 0x7c8a51dd "appID" 0xd1114f73 "composeHash" "rtmr0" "rtmr1" "rtmr2" "rtmr3" "pubkey"
+    // contracts/oracle.algo.ts:167
     // export class CatFactsOracle extends PhalaTdxOracle {
     txn NumAppArgs
     bz main___algots__.defaultCreate@10
@@ -22,7 +22,7 @@ main:
     err
 
 main___algots__.defaultCreate@10:
-    // contracts/oracle.algo.ts:163
+    // contracts/oracle.algo.ts:167
     // export class CatFactsOracle extends PhalaTdxOracle {
     txn OnCompletion
     !
@@ -36,7 +36,7 @@ main___algots__.defaultCreate@10:
 
 // contracts/oracle.algo.ts::CatFactsOracle.addFact[routing]() -> void:
 addFact:
-    // contracts/oracle.algo.ts:166
+    // contracts/oracle.algo.ts:170
     // addFact(coverFeeTxn: gtxn.ApplicationCallTxn, fact: string) {
     txn GroupIndex
     intc_1 // 1
@@ -57,23 +57,23 @@ addFact:
     ==
     assert // invalid number of bytes for arc4.dynamic_array<arc4.uint8>
     extract 2 0
-    // contracts/oracle.algo.ts:167
+    // contracts/oracle.algo.ts:171
     // this.assertSenderIsPhalaApp();
     callsub assertSenderIsPhalaApp
-    // contracts/oracle.algo.ts:119
+    // contracts/oracle.algo.ts:122
     // coverFeeTxn.appArgs(0) === methodSelector(this.coverFee),
     swap
     intc_0 // 0
     gtxnsas ApplicationArgs
     bytec_0 // method "coverFee()void"
     ==
-    // contracts/oracle.algo.ts:118-121
+    // contracts/oracle.algo.ts:121-124
     // assert(
     //   coverFeeTxn.appArgs(0) === methodSelector(this.coverFee),
     //   "Invalid cover fee txn",
     // );
     assert // Invalid cover fee txn
-    // contracts/oracle.algo.ts:172
+    // contracts/oracle.algo.ts:176
     // this.facts(Global.round).value = fact;
     global Round
     itob
@@ -82,7 +82,7 @@ addFact:
     pop
     swap
     box_put
-    // contracts/oracle.algo.ts:166
+    // contracts/oracle.algo.ts:170
     // addFact(coverFeeTxn: gtxn.ApplicationCallTxn, fact: string) {
     intc_1 // 1
     return
@@ -90,7 +90,7 @@ addFact:
 
 // contracts/oracle.algo.ts::PhalaTdxOracle.bootstrap[routing]() -> void:
 bootstrap:
-    // contracts/oracle.algo.ts:124-129
+    // contracts/oracle.algo.ts:127-132
     // bootstrap(
     //   signals: Signals,
     //   proof: Proof,
@@ -128,31 +128,31 @@ bootstrap:
     intc_3 // appl
     ==
     assert // transaction type is appl
-    // contracts/oracle.algo.ts:130
+    // contracts/oracle.algo.ts:133
     // assert(!this.appID.hasValue, "Contract already bootstrapped");
     intc_0 // 0
     // contracts/oracle.algo.ts:52
     // appID = GlobalState<PhalaAppID>();
     bytec_1 // "appID"
-    // contracts/oracle.algo.ts:130
+    // contracts/oracle.algo.ts:133
     // assert(!this.appID.hasValue, "Contract already bootstrapped");
     app_global_get_ex
     bury 1
     !
     assert // Contract already bootstrapped
-    // contracts/oracle.algo.ts:119
+    // contracts/oracle.algo.ts:122
     // coverFeeTxn.appArgs(0) === methodSelector(this.coverFee),
     intc_0 // 0
     gtxnsas ApplicationArgs
     bytec_0 // method "coverFee()void"
     ==
-    // contracts/oracle.algo.ts:118-121
+    // contracts/oracle.algo.ts:121-124
     // assert(
     //   coverFeeTxn.appArgs(0) === methodSelector(this.coverFee),
     //   "Invalid cover fee txn",
     // );
     assert // Invalid cover fee txn
-    // contracts/oracle.algo.ts:133
+    // contracts/oracle.algo.ts:136
     // this.appID.value = committedInputs.appID;
     dup
     pushints 256 20 // 256, 20
@@ -160,89 +160,105 @@ bootstrap:
     // contracts/oracle.algo.ts:52
     // appID = GlobalState<PhalaAppID>();
     bytec_1 // "appID"
-    // contracts/oracle.algo.ts:133
+    // contracts/oracle.algo.ts:136
     // this.appID.value = committedInputs.appID;
     dig 1
     app_global_put
-    // contracts/oracle.algo.ts:134
+    // contracts/oracle.algo.ts:137
     // this.composeHash.value = committedInputs.composeHash;
     dig 1
     extract 224 32
     // contracts/oracle.algo.ts:49
     // composeHash = GlobalState<bytes32>();
     bytec_3 // "composeHash"
-    // contracts/oracle.algo.ts:134
+    // contracts/oracle.algo.ts:137
     // this.composeHash.value = committedInputs.composeHash;
     dig 1
     app_global_put
-    // contracts/oracle.algo.ts:135
+    // contracts/oracle.algo.ts:138
     // this.rtmr0.value = committedInputs.rtmr0;
     dig 2
     extract 0 48
     // contracts/oracle.algo.ts:58
     // rtmr0 = GlobalState<Sha384Digest>();
     bytec 4 // "rtmr0"
-    // contracts/oracle.algo.ts:135
+    // contracts/oracle.algo.ts:138
     // this.rtmr0.value = committedInputs.rtmr0;
     dig 1
     app_global_put
-    // contracts/oracle.algo.ts:136
+    // contracts/oracle.algo.ts:139
     // this.rtmr1.value = committedInputs.rtmr1;
     dig 3
     extract 48 48
     // contracts/oracle.algo.ts:61
     // rtmr1 = GlobalState<Sha384Digest>();
     bytec 5 // "rtmr1"
-    // contracts/oracle.algo.ts:136
+    // contracts/oracle.algo.ts:139
     // this.rtmr1.value = committedInputs.rtmr1;
     dig 1
     app_global_put
-    // contracts/oracle.algo.ts:137
+    // contracts/oracle.algo.ts:140
     // this.rtmr2.value = committedInputs.rtmr2;
     dig 4
     extract 96 48
     // contracts/oracle.algo.ts:64
     // rtmr2 = GlobalState<Sha384Digest>();
     bytec 6 // "rtmr2"
-    // contracts/oracle.algo.ts:137
+    // contracts/oracle.algo.ts:140
     // this.rtmr2.value = committedInputs.rtmr2;
     dig 1
     app_global_put
-    // contracts/oracle.algo.ts:138
+    // contracts/oracle.algo.ts:141
     // this.rtmr3.value = committedInputs.rtmr3;
     dig 5
     extract 144 48
     // contracts/oracle.algo.ts:77
     // rtmr3 = GlobalState<Sha384Digest>();
-    pushbytes "rtmr3"
-    // contracts/oracle.algo.ts:138
+    bytec 7 // "rtmr3"
+    // contracts/oracle.algo.ts:141
     // this.rtmr3.value = committedInputs.rtmr3;
     dig 1
     app_global_put
-    // contracts/oracle.algo.ts:84-85
+    // contracts/oracle.algo.ts:142
+    // this.vkHash.value = signals.at(1)!.bytes.toFixed({ length: 32 });
+    dig 8
+    extract 34 32
+    dup
+    len
+    pushint 32 // 32
+    ==
+    assert // Length must be 32
+    // contracts/oracle.algo.ts:79
+    // vkHash = GlobalState<bytes32>();
+    pushbytes "vkHash"
+    // contracts/oracle.algo.ts:142
+    // this.vkHash.value = signals.at(1)!.bytes.toFixed({ length: 32 });
+    swap
+    app_global_put
+    // contracts/oracle.algo.ts:86-87
     // const toBeHashed = committedInputs.rtmr0
     //   .concat(committedInputs.rtmr1)
     dig 3
     dig 3
     concat
-    // contracts/oracle.algo.ts:84-86
+    // contracts/oracle.algo.ts:86-88
     // const toBeHashed = committedInputs.rtmr0
     //   .concat(committedInputs.rtmr1)
     //   .concat(committedInputs.rtmr2)
     dig 2
     concat
-    // contracts/oracle.algo.ts:84-87
+    // contracts/oracle.algo.ts:86-89
     // const toBeHashed = committedInputs.rtmr0
     //   .concat(committedInputs.rtmr1)
     //   .concat(committedInputs.rtmr2)
     //   .concat(committedInputs.rtmr3)
-    swap
+    dig 1
     concat
-    // contracts/oracle.algo.ts:88
+    // contracts/oracle.algo.ts:90
     // .concat(committedInputs.pubkey)
-    uncover 6
+    uncover 7
     extract 192 32
-    // contracts/oracle.algo.ts:84-88
+    // contracts/oracle.algo.ts:86-90
     // const toBeHashed = committedInputs.rtmr0
     //   .concat(committedInputs.rtmr1)
     //   .concat(committedInputs.rtmr2)
@@ -251,16 +267,16 @@ bootstrap:
     swap
     dig 1
     concat
-    // contracts/oracle.algo.ts:84-89
+    // contracts/oracle.algo.ts:86-91
     // const toBeHashed = committedInputs.rtmr0
     //   .concat(committedInputs.rtmr1)
     //   .concat(committedInputs.rtmr2)
     //   .concat(committedInputs.rtmr3)
     //   .concat(committedInputs.pubkey)
     //   .concat(committedInputs.composeHash)
-    dig 5
+    dig 6
     concat
-    // contracts/oracle.algo.ts:84-90
+    // contracts/oracle.algo.ts:86-92
     // const toBeHashed = committedInputs.rtmr0
     //   .concat(committedInputs.rtmr1)
     //   .concat(committedInputs.rtmr2)
@@ -268,101 +284,114 @@ bootstrap:
     //   .concat(committedInputs.pubkey)
     //   .concat(committedInputs.composeHash)
     //   .concat(committedInputs.appID);
-    dig 6
+    dig 7
     concat
-    // contracts/oracle.algo.ts:91
+    // contracts/oracle.algo.ts:93
     // const computedSignal = sha256(toBeHashed);
     sha256
-    // contracts/oracle.algo.ts:93
+    // contracts/oracle.algo.ts:95
     // assert(signals.length !== 2, "Invalid signals length");
-    uncover 7
+    uncover 8
     intc_2 // 2
     !=
     assert // Invalid signals length
-    // contracts/oracle.algo.ts:94
+    // contracts/oracle.algo.ts:96
     // assert(signals.at(0)!.bytes === computedSignal, "Signal mismatch");
-    uncover 7
+    uncover 8
     extract 2 32
     ==
     assert // Signal mismatch
-    // contracts/oracle.algo.ts:97
+    // contracts/oracle.algo.ts:99
     // committedInputs.composeHash === this.composeHash.value,
     intc_0 // 0
     // contracts/oracle.algo.ts:49
     // composeHash = GlobalState<bytes32>();
     bytec_3 // "composeHash"
-    // contracts/oracle.algo.ts:97
+    // contracts/oracle.algo.ts:99
     // committedInputs.composeHash === this.composeHash.value,
     app_global_get_ex
     assert // check GlobalState exists
-    uncover 5
+    uncover 6
     ==
-    // contracts/oracle.algo.ts:96-99
+    // contracts/oracle.algo.ts:98-101
     // assert(
     //   committedInputs.composeHash === this.composeHash.value,
     //   "Compose hash mismatch",
     // );
     assert // Compose hash mismatch
-    // contracts/oracle.algo.ts:101
+    // contracts/oracle.algo.ts:103
     // assert(committedInputs.appID === this.appID.value, "Phala App ID mismatch");
     intc_0 // 0
     // contracts/oracle.algo.ts:52
     // appID = GlobalState<PhalaAppID>();
     bytec_1 // "appID"
-    // contracts/oracle.algo.ts:101
+    // contracts/oracle.algo.ts:103
     // assert(committedInputs.appID === this.appID.value, "Phala App ID mismatch");
     app_global_get_ex
     assert // check GlobalState exists
-    uncover 5
+    uncover 6
     ==
     assert // Phala App ID mismatch
-    // contracts/oracle.algo.ts:102
+    // contracts/oracle.algo.ts:104
     // assert(committedInputs.rtmr0 === this.rtmr0.value, "RTMR0 mismatch");
     intc_0 // 0
     // contracts/oracle.algo.ts:58
     // rtmr0 = GlobalState<Sha384Digest>();
     bytec 4 // "rtmr0"
-    // contracts/oracle.algo.ts:102
+    // contracts/oracle.algo.ts:104
     // assert(committedInputs.rtmr0 === this.rtmr0.value, "RTMR0 mismatch");
     app_global_get_ex
     assert // check GlobalState exists
-    uncover 4
+    uncover 5
     ==
     assert // RTMR0 mismatch
-    // contracts/oracle.algo.ts:103
+    // contracts/oracle.algo.ts:105
     // assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
     intc_0 // 0
     // contracts/oracle.algo.ts:61
     // rtmr1 = GlobalState<Sha384Digest>();
     bytec 5 // "rtmr1"
-    // contracts/oracle.algo.ts:103
+    // contracts/oracle.algo.ts:105
     // assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
     app_global_get_ex
     assert // check GlobalState exists
-    uncover 3
+    uncover 4
     ==
     assert // RTMR1 mismatch
-    // contracts/oracle.algo.ts:104
+    // contracts/oracle.algo.ts:106
     // assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
     intc_0 // 0
     // contracts/oracle.algo.ts:64
     // rtmr2 = GlobalState<Sha384Digest>();
     bytec 6 // "rtmr2"
-    // contracts/oracle.algo.ts:104
+    // contracts/oracle.algo.ts:106
     // assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
+    app_global_get_ex
+    assert // check GlobalState exists
+    uncover 3
+    ==
+    assert // RTMR2 mismatch
+    // contracts/oracle.algo.ts:107
+    // assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
+    intc_0 // 0
+    // contracts/oracle.algo.ts:77
+    // rtmr3 = GlobalState<Sha384Digest>();
+    bytec 7 // "rtmr3"
+    // contracts/oracle.algo.ts:107
+    // assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
     app_global_get_ex
     assert // check GlobalState exists
     uncover 2
     ==
-    assert // RTMR2 mismatch
+    assert // RTMR3 mismatch
     // contracts/oracle.algo.ts:55
     // pubkey = GlobalState<bytes32>();
-    bytec 7 // "pubkey"
-    // contracts/oracle.algo.ts:107
+    bytec 8 // "pubkey"
+    // contracts/oracle.algo.ts:110
     // this.pubkey.value = committedInputs.pubkey;
     swap
     app_global_put
-    // contracts/oracle.algo.ts:124-129
+    // contracts/oracle.algo.ts:127-132
     // bootstrap(
     //   signals: Signals,
     //   proof: Proof,
@@ -375,40 +404,40 @@ bootstrap:
 
 // contracts/oracle.algo.ts::PhalaTdxOracle.coverFee[routing]() -> void:
 coverFee:
-    // contracts/oracle.algo.ts:144
+    // contracts/oracle.algo.ts:148
     // const gindex: uint64 = Txn.groupIndex + 1;
     txn GroupIndex
     intc_1 // 1
     +
     dupn 2
-    // contracts/oracle.algo.ts:145
+    // contracts/oracle.algo.ts:149
     // const method = GTxn.applicationArgs(gindex, 0);
     intc_0 // 0
     gtxnsas ApplicationArgs
-    // contracts/oracle.algo.ts:147
+    // contracts/oracle.algo.ts:151
     // assert(GTxn.applicationId(gindex) === Global.currentApplicationId);
     swap
     gtxns ApplicationID
     global CurrentApplicationID
     ==
     assert
-    // contracts/oracle.algo.ts:148
+    // contracts/oracle.algo.ts:152
     // assert(method !== methodSelector(this.coverFee));
     dup
     bytec_0 // method "coverFee()void"
     !=
     assert
-    // contracts/oracle.algo.ts:150
+    // contracts/oracle.algo.ts:154
     // if (method !== methodSelector(this.bootstrap)) {
     bytec_2 // method "bootstrap(uint256[],byte[0],(byte[48],byte[48],byte[48],byte[48],byte[32],byte[32],byte[20]),appl)void"
     !=
     bz coverFee_after_if_else@3
-    // contracts/oracle.algo.ts:151
+    // contracts/oracle.algo.ts:155
     // this.assertSenderIsPhalaApp();
     callsub assertSenderIsPhalaApp
 
 coverFee_after_if_else@3:
-    // contracts/oracle.algo.ts:154-159
+    // contracts/oracle.algo.ts:158-163
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -416,10 +445,10 @@ coverFee_after_if_else@3:
     //   })
     //   .submit();
     itxn_begin
-    // contracts/oracle.algo.ts:156
+    // contracts/oracle.algo.ts:160
     // receiver: Txn.sender,
     txn Sender
-    // contracts/oracle.algo.ts:157
+    // contracts/oracle.algo.ts:161
     // amount: GTxn.fee(gindex) + Global.minBalance - op.balance(Txn.sender),
     dig 1
     gtxns Fee
@@ -430,7 +459,7 @@ coverFee_after_if_else@3:
     -
     itxn_field Amount
     itxn_field Receiver
-    // contracts/oracle.algo.ts:154-158
+    // contracts/oracle.algo.ts:158-162
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -440,7 +469,7 @@ coverFee_after_if_else@3:
     itxn_field TypeEnum
     intc_0 // 0
     itxn_field Fee
-    // contracts/oracle.algo.ts:154-159
+    // contracts/oracle.algo.ts:158-163
     // itxn
     //   .payment({
     //     receiver: Txn.sender,
@@ -448,7 +477,7 @@ coverFee_after_if_else@3:
     //   })
     //   .submit();
     itxn_submit
-    // contracts/oracle.algo.ts:143
+    // contracts/oracle.algo.ts:147
     // coverFee() {
     intc_1 // 1
     return
@@ -456,19 +485,19 @@ coverFee_after_if_else@3:
 
 // contracts/oracle.algo.ts::PhalaTdxOracle.assertSenderIsPhalaApp() -> void:
 assertSenderIsPhalaApp:
-    // contracts/oracle.algo.ts:112
+    // contracts/oracle.algo.ts:115
     // Txn.sender.bytes === this.pubkey.value,
     txn Sender
     intc_0 // 0
     // contracts/oracle.algo.ts:55
     // pubkey = GlobalState<bytes32>();
-    bytec 7 // "pubkey"
-    // contracts/oracle.algo.ts:112
+    bytec 8 // "pubkey"
+    // contracts/oracle.algo.ts:115
     // Txn.sender.bytes === this.pubkey.value,
     app_global_get_ex
     assert // check GlobalState exists
     ==
-    // contracts/oracle.algo.ts:111-114
+    // contracts/oracle.algo.ts:114-117
     // assert(
     //   Txn.sender.bytes === this.pubkey.value,
     //   "Sender is not the registered app",
