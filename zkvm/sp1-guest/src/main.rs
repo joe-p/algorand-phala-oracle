@@ -61,11 +61,48 @@ impl RMTRValues {
     }
 }
 
+const DSTACK_RUNTIME_EVENT_TYPE: u32 = 0x08000001;
+
+pub enum Event {
+    ComposeHash,
+    AppId,
+}
+
+impl Event {
+    fn name(&self) -> &'static str {
+        match self {
+            Event::ComposeHash => "compose-hash",
+            Event::AppId => "app-id",
+        }
+    }
+
+    fn calculate_digest(&self, payload: &[u8]) -> [u8; 48] {
+        let mut hasher = Sha384::default();
+        hasher.update(DSTACK_RUNTIME_EVENT_TYPE.to_le_bytes());
+        hasher.update(b":");
+        hasher.update(self.name().as_bytes());
+        hasher.update(b":");
+        hasher.update(payload);
+        hasher.finalize().into()
+    }
+
+    fn validate_digest(&self, payload: &[u8], digest: &[u8; 48]) {
+        let calculated_digest = self.calculate_digest(payload);
+        assert_eq!(
+            &calculated_digest,
+            digest,
+            "{} digest mismatch: quoted {} does not match replayed {}",
+            self.name(),
+            self.name(),
+            self.name()
+        );
+    }
+}
+
 pub fn main() {
     let quote_bytes = sp1_zkvm::io::read::<Vec<u8>>();
     let rtmr_event_digests = sp1_zkvm::io::read::<Vec<Vec<u8>>>();
 
-    // TODO: verify compose hash and app id against event digest based on index
     let compose_hash = sp1_zkvm::io::read::<Vec<u8>>();
     let app_id = sp1_zkvm::io::read::<Vec<u8>>();
 
@@ -88,6 +125,15 @@ pub fn main() {
             arr
         })
         .collect();
+
+    let rtmr3_digests = &event_digests[Rtmr::RTMR3.range()];
+    let app_id_digest = rtmr3_digests.get(1).expect("should have app id digest");
+    Event::AppId.validate_digest(&app_id, app_id_digest);
+
+    let compose_hash_digest = rtmr3_digests
+        .get(2)
+        .expect("should have compose hash digest");
+    Event::ComposeHash.validate_digest(&compose_hash, compose_hash_digest);
 
     let quote: Quote = Quote::parse(&quote_bytes).expect("failed to parse quote");
 

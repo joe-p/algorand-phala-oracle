@@ -12,6 +12,18 @@ fn get_rtmr_event_digests(quote_resp: &GetQuoteResponse, imr: u32) -> Vec<Vec<u8
         .collect::<Vec<Vec<u8>>>()
 }
 
+fn get_event_payload(quote_resp: &GetQuoteResponse, event: &str) -> Vec<u8> {
+    quote_resp
+        .decode_event_log()
+        .expect("should be able to decode event log")
+        .into_iter()
+        .find(|event_log| event_log.event == event)
+        .map(|event_log| {
+            hex::decode(&event_log.event_payload).expect("should be able to decode payload")
+        })
+        .expect("should have event")
+}
+
 #[tokio::main]
 async fn main() {
     sp1_sdk::utils::setup_logger();
@@ -34,7 +46,15 @@ async fn main() {
     let rtmr1_vec = get_rtmr_event_digests(&quote_resp, 1);
     let rtmr2_vec = get_rtmr_event_digests(&quote_resp, 2);
     let rtmr3_vec = get_rtmr_event_digests(&quote_resp, 3);
+
     let all_digests_vec = [rtmr0_vec, rtmr1_vec, rtmr2_vec, rtmr3_vec].concat();
+
+    let mut stdin = SP1Stdin::new();
+    stdin.write(&quote);
+    stdin.write(&all_digests_vec);
+
+    stdin.write(&get_event_payload(&quote_resp, "compose-hash"));
+    stdin.write(&get_event_payload(&quote_resp, "app-id"));
 
     // NOTE: Collateral verification is skipped in this host code since we're not using a real TDX
     //
@@ -47,14 +67,6 @@ async fn main() {
     //     .duration_since(std::time::UNIX_EPOCH)
     //     .unwrap()
     //     .as_secs();
-
-    let mut stdin = SP1Stdin::new();
-    stdin.write(&quote);
-    stdin.write(&all_digests_vec);
-
-    // TODO: Compose hash and app id should be provided by the host environment
-    stdin.write(&vec![] as &Vec<u8>); // compose_hash
-    stdin.write(&vec![] as &Vec<u8>); // app_id
 
     // stdin.write(&borsh::to_vec(&collateral).expect("should be able to serialize collateral"));
     // stdin.write(&now);
