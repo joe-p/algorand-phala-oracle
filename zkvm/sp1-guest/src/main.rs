@@ -11,25 +11,25 @@ type EventDigest = [u8; 48];
 // IMR2 Events: 2
 // IMR3 Events: 9
 
-enum RTMR {
+enum Rtmr {
     RTMR0 = 0,
     RTMR1 = 1,
     RTMR2 = 2,
     RTMR3 = 3,
 }
 
-impl RTMR {
+impl Rtmr {
     fn range(&self) -> std::ops::Range<usize> {
         match self {
-            RTMR::RTMR0 => 0..17,
-            RTMR::RTMR1 => 17..22,
-            RTMR::RTMR2 => 22..24,
-            RTMR::RTMR3 => 24..33,
+            Rtmr::RTMR0 => 0..17,
+            Rtmr::RTMR1 => 17..22,
+            Rtmr::RTMR2 => 22..24,
+            Rtmr::RTMR3 => 24..33,
         }
     }
 }
 
-fn replay_rtmr(event_digests: &[EventDigest], rmtr: RTMR) -> [u8; 48] {
+fn replay_rtmr(event_digests: &[EventDigest], rmtr: Rtmr) -> [u8; 48] {
     let mut mr = [0u8; 48];
     for digest in &event_digests[rmtr.range()] {
         let hasher = Sha384::default();
@@ -53,10 +53,10 @@ struct RMTRValues {
 impl RMTRValues {
     fn from_event_digests(event_digests: &[EventDigest]) -> Self {
         Self {
-            rtmr0: replay_rtmr(event_digests, RTMR::RTMR0),
-            rtmr1: replay_rtmr(event_digests, RTMR::RTMR1),
-            rtmr2: replay_rtmr(event_digests, RTMR::RTMR2),
-            rtmr3: replay_rtmr(event_digests, RTMR::RTMR3),
+            rtmr0: replay_rtmr(event_digests, Rtmr::RTMR0),
+            rtmr1: replay_rtmr(event_digests, Rtmr::RTMR1),
+            rtmr2: replay_rtmr(event_digests, Rtmr::RTMR2),
+            rtmr3: replay_rtmr(event_digests, Rtmr::RTMR3),
         }
     }
 }
