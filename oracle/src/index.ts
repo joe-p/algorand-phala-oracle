@@ -1,5 +1,5 @@
 import { ed25519 } from "@noble/curves/ed25519.js";
-import { sha256, sha384 } from "@noble/hashes/sha2";
+import { sha256 } from "@noble/hashes/sha2";
 import { DstackClient } from "@phala/dstack-sdk";
 import {
   CatFactsOracleClient,
@@ -13,7 +13,6 @@ import {
 } from "algosdk";
 import * as algosdk from "algosdk";
 import { concatBytes } from "@noble/curves/utils.js";
-import { utf8ToBytes } from "@noble/hashes/utils";
 
 type RawProofResponse = {
   rtmr0: string;
@@ -47,40 +46,6 @@ function decodeProofResponse(raw: RawProofResponse): ProofResponse {
   };
 }
 
-const DSTACK_RUNTIME_EVENT_TYPE = 0x08000001;
-
-/**
- * Calculate the digest for a dstack runtime event.
- *
- * Formula: SHA384(event_type_bytes || ":" || event_name || ":" || payload)
- */
-function calculateEventDigest(
-  eventName: string,
-  payload: Uint8Array,
-): Uint8Array {
-  // Convert event type to little-endian bytes (u32)
-  const eventTypeBytes = new Uint8Array(4);
-  new DataView(eventTypeBytes.buffer).setUint32(
-    0,
-    DSTACK_RUNTIME_EVENT_TYPE,
-    true,
-  );
-
-  const colon = utf8ToBytes(":");
-  const eventNameBytes = utf8ToBytes(eventName);
-
-  // Concatenate: event_type || ":" || event_name || ":" || payload
-  const message = concatBytes(
-    eventTypeBytes,
-    colon,
-    eventNameBytes,
-    colon,
-    payload,
-  );
-
-  return sha384(message);
-}
-
 const client = new DstackClient("../dstack/sdk/simulator/dstack.sock");
 const key = ed25519.keygen();
 const defaultSender = new algosdk.Address(key.publicKey);
@@ -102,11 +67,13 @@ const algorand = AlgorandClient.defaultLocalNet();
 algorand.account.setSigner(defaultSender, defaultSigner);
 
 const bootstrap = async () => {
+  console.log("Address:", defaultSender.toString());
   const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
     defaultSender: new algosdk.Address(key.publicKey),
     defaultSigner,
   });
 
+  console.log("Getting quote... this may take a minute");
   const quote = await client.getQuote(key.publicKey);
   const proofRes = await fetch("http://localhost:3000/proof", {
     method: "POST",
@@ -162,39 +129,7 @@ const bootstrap = async () => {
   });
 };
 
-console.debug("Public Key:", Buffer.from(key.publicKey).toString("hex"));
-console.debug("Address:", defaultSender.toString());
-
 await bootstrap();
-
-const quote = await client.getQuote(key.publicKey);
-const eventLogs: any[] = JSON.parse(quote.event_log);
-const imr0 = eventLogs.filter((l) => l.imr === 0).map((l) => l.event);
-const imr1 = eventLogs.filter((l) => l.imr === 1).map((l) => l.event);
-const imr2 = eventLogs.filter((l) => l.imr === 2).map((l) => l.event);
-const imr3 = eventLogs.filter((l) => l.imr === 3).map((l) => l.event);
-
-eventLogs.forEach((event) => {
-  console.debug(event);
-  const calculatedDigest = calculateEventDigest(
-    event.event,
-    new Uint8Array(Buffer.from(event.event_payload, "hex")),
-  );
-  console.debug(
-    `Calculated Digest: ${Buffer.from(calculatedDigest).toString("hex")}`,
-  );
-  console.debug(`Event Digest:      ${event.digest}`);
-  console.debug(
-    `Digest Match:      ${
-      Buffer.from(calculatedDigest).toString("hex") === event.digest
-    }`,
-  );
-});
-console.debug("IMR0 Events:", imr0.length);
-console.debug("IMR1 Events:", imr1.length);
-console.debug("IMR2 Events:", imr2.length);
-console.debug("IMR3 Events:", imr3.length);
-console.debug("IMR3:", imr3);
 
 const factEveryBlock = async () => {
   let round = (await algorand.client.algod.status().do()).lastRound;
