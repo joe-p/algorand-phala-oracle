@@ -235,10 +235,10 @@ bootstrap:
     // const computedSignal = sha256(toBeHashed);
     sha256
     // contracts/oracle.algo.ts:95
-    // assert(signals.length !== 2, "Invalid signals length");
+    // assert(signals.length === 2, "Invalid signals length");
     uncover 8
     intc_3 // 2
-    !=
+    ==
     assert // Invalid signals length
     // contracts/oracle.algo.ts:96
     // assert(signals.at(0)!.bytes === computedSignal, "Signal mismatch");

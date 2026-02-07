@@ -13,6 +13,9 @@ reqwest = "0.13.1"
 hex = "0.4.3"
 dstack-sdk-types = "0.1.2"
 serde_json = "1.0.149"
+axum = "0.8.8"
+serde = "1.0.228"
+serde_with = { version = "3.16.1", features = ["base64"] }
 
 [build-dependencies]
 sp1-build = "5.2.4"

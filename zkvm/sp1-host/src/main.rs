@@ -1,6 +1,28 @@
 use dstack_sdk_types::dstack::GetQuoteResponse;
 use sp1_sdk::{ProverClient, SP1Stdin, include_elf};
 pub const PROVER_ELF: &[u8] = include_elf!("sp1-guest");
+use axum::{Json, Router, routing::post};
+use serde::{Deserialize, Serialize};
+use serde_with::{base64::Base64, serde_as};
+
+#[serde_as]
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ProofResponse {
+    #[serde_as(as = "Base64")]
+    pub rtmr0: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub rtmr1: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub rtmr2: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub rtmr3: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub committed_key: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub compose_hash: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub app_id: Vec<u8>,
+}
 
 fn get_rtmr_event_digests(quote_resp: &GetQuoteResponse, imr: u32) -> Vec<Vec<u8>> {
     quote_resp
@@ -24,19 +46,8 @@ fn get_event_payload(quote_resp: &GetQuoteResponse, event: &str) -> Vec<u8> {
         .expect("should have event")
 }
 
-#[tokio::main]
-async fn main() {
+async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofResponse> {
     sp1_sdk::utils::setup_logger();
-
-    let quote_json = reqwest::get("http://localhost:3000/quote")
-        .await
-        .expect("should be able to get quote")
-        .text()
-        .await
-        .expect("should be able to get quote hex");
-
-    let quote_resp: GetQuoteResponse =
-        serde_json::from_str(&quote_json).expect("should be able to parse quote response");
 
     let quote = quote_resp
         .decode_quote()
@@ -97,12 +108,36 @@ async fn main() {
     output.read_slice(&mut committed_key);
     println!("ed25519 key: {}", hex::encode(committed_key));
 
-    let app_key = reqwest::get("http://localhost:3000/key")
-        .await
-        .expect("should be able to get quote")
-        .bytes()
-        .await
-        .expect("should be able to get quote hex");
+    let mut compose_hash_bytes = [0u8; 32];
+    output.read_slice(&mut compose_hash_bytes);
+    println!("Compose hash: {}", hex::encode(compose_hash_bytes));
 
-    assert_eq!(&committed_key[..], &app_key[..], "App key mismatch");
+    let mut app_id_bytes = [0u8; 20];
+    output.read_slice(&mut app_id_bytes);
+    println!("App ID: {}", hex::encode(app_id_bytes));
+
+    Json(ProofResponse {
+        rtmr0: rmtr0_bytes.to_vec(),
+        rtmr1: rmtr1_bytes.to_vec(),
+        rtmr2: rmtr2_bytes.to_vec(),
+        rtmr3: rmtr3_bytes.to_vec(),
+        committed_key: committed_key.to_vec(),
+        compose_hash: compose_hash_bytes.to_vec(),
+        app_id: app_id_bytes.to_vec(),
+    })
+}
+
+#[tokio::main]
+async fn main() {
+    // Build our application with a route
+    let app = Router::new().route("/proof", post(get_proof));
+
+    // Run the server
+    let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")
+        .await
+        .unwrap();
+
+    println!("Server running on http://127.0.0.1:3000");
+
+    axum::serve(listener, app).await.unwrap();
 }

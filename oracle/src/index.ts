@@ -1,16 +1,11 @@
 import { ed25519 } from "@noble/curves/ed25519.js";
 import { sha256, sha384 } from "@noble/hashes/sha2";
 import { DstackClient } from "@phala/dstack-sdk";
-import express from "express";
 import {
   CatFactsOracleClient,
   CatFactsOracleFactory,
 } from "../contracts/clients/CatFactsOracleClient";
-import {
-  algo,
-  AlgorandClient,
-  microAlgo,
-} from "@algorandfoundation/algokit-utils";
+import { AlgorandClient, microAlgo } from "@algorandfoundation/algokit-utils";
 import {
   SignedTransaction,
   type Transaction,
@@ -19,6 +14,38 @@ import {
 import * as algosdk from "algosdk";
 import { concatBytes } from "@noble/curves/utils.js";
 import { utf8ToBytes } from "@noble/hashes/utils";
+
+type RawProofResponse = {
+  rtmr0: string;
+  rtmr1: string;
+  rtmr2: string;
+  rtmr3: string;
+  committed_key: string;
+  compose_hash: string;
+  app_id: string;
+};
+
+type ProofResponse = {
+  rtmr0: Uint8Array;
+  rtmr1: Uint8Array;
+  rtmr2: Uint8Array;
+  rtmr3: Uint8Array;
+  committedKey: Uint8Array;
+  composeHash: Uint8Array;
+  appId: Uint8Array;
+};
+
+function decodeProofResponse(raw: RawProofResponse): ProofResponse {
+  return {
+    rtmr0: new Uint8Array(Buffer.from(raw.rtmr0, "base64")),
+    rtmr1: new Uint8Array(Buffer.from(raw.rtmr1, "base64")),
+    rtmr2: new Uint8Array(Buffer.from(raw.rtmr2, "base64")),
+    rtmr3: new Uint8Array(Buffer.from(raw.rtmr3, "base64")),
+    committedKey: new Uint8Array(Buffer.from(raw.committed_key, "base64")),
+    composeHash: new Uint8Array(Buffer.from(raw.compose_hash, "base64")),
+    appId: new Uint8Array(Buffer.from(raw.app_id, "base64")),
+  };
+}
 
 const DSTACK_RUNTIME_EVENT_TYPE = 0x08000001;
 
@@ -80,16 +107,19 @@ const bootstrap = async () => {
     defaultSigner,
   });
 
-  const info = await client.info();
-  const appId = new Uint8Array(Buffer.from(info.app_id, "hex"));
-  const composeHash = new Uint8Array(Buffer.from(info.compose_hash, "hex"));
-  const rtmr0 = new Uint8Array(48);
-  const rtmr1 = new Uint8Array(48);
-  const rtmr2 = new Uint8Array(48);
-  const rtmr3 = new Uint8Array(48);
-  rtmr1.set([1], 0);
-  rtmr2.set([2], 0);
-  rtmr3.set([3], 0);
+  const quote = await client.getQuote(key.publicKey);
+  const proofRes = await fetch("http://localhost:3000/proof", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(quote),
+  });
+
+  const rawProofRes: RawProofResponse = await proofRes.json();
+
+  const { rtmr0, rtmr1, rtmr2, rtmr3, composeHash, appId } =
+    decodeProofResponse(rawProofRes);
 
   const signal = sha256(
     concatBytes(rtmr0, rtmr1, rtmr2, rtmr3, key.publicKey, composeHash, appId),
@@ -110,7 +140,10 @@ const bootstrap = async () => {
   await appClient.send.bootstrap({
     staticFee: microAlgo(3_000),
     args: {
-      signals: [algosdk.bytesToBigInt(signal)],
+      signals: [
+        algosdk.bytesToBigInt(signal),
+        algosdk.bytesToBigInt(new Uint8Array(32)), // vk hash
+      ],
       proof: new Uint8Array(0),
       committedInputs: {
         rtmr0,
@@ -206,20 +239,4 @@ const factEveryBlock = async () => {
   }
 };
 
-// factEveryBlock();
-
-const app = express();
-const PORT = 3000;
-
-app.get("/quote", async (_, res) => {
-  const quote = await client.getQuote(key.publicKey);
-  res.send(quote);
-});
-
-app.get("/key", (_, res) => {
-  res.send(key.publicKey);
-});
-
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+factEveryBlock();

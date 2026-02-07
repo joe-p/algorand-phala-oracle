@@ -92,7 +92,7 @@ export class PhalaTdxOracle extends Contract {
       .concat(committedInputs.appID);
     const computedSignal = sha256(toBeHashed);
 
-    assert(signals.length !== 2, "Invalid signals length");
+    assert(signals.length === 2, "Invalid signals length");
     assert(signals.at(0)!.bytes === computedSignal, "Signal mismatch");
 
     assert(
