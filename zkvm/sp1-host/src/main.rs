@@ -2,6 +2,7 @@ use dstack_sdk_types::dstack::GetQuoteResponse;
 use sp1_sdk::{Prover, ProverClient, SP1Stdin, include_elf};
 pub const PROVER_ELF: &[u8] = include_elf!("sp1-guest");
 use axum::{Json, Router, routing::post};
+use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
 use std::fs;
@@ -104,7 +105,9 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
     // stdin.write(&borsh::to_vec(&collateral).expect("should be able to serialize collateral"));
     // stdin.write(&now);
 
-    let client = ProverClient::builder().mock().build();
+    let client = ProverClient::builder()
+        .network_for(sp1_sdk::network::NetworkMode::Mainnet)
+        .build();
 
     println!("Executing prover...");
     let setup_start = std::time::Instant::now();
@@ -204,6 +207,8 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
 
 #[tokio::main]
 async fn main() {
+    dotenv().ok();
+
     // Build our application with a route
     let app = Router::new().route("/proof", post(get_proof));
 
