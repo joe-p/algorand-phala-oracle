@@ -9,6 +9,10 @@ This repo contains four components for the Algorand Phala Oracle:
 
 Put together, these components enable a trust-minimized (see Trust section below for details) oracle solution for Algorand. The current implementation in this repo is a useless "cat facts" oracle that publishes responses from the public API at https://catfact.ninja/fact to boxes in a smart contract. The contents of the `CatFactOracle` contract and `src/index.ts`, however, can easily be modified to support any data source and any logic for processing the data before submitting it to the blockchain.
 
+## Status
+
+This repo is for research purposes only. The code has not been audited and is not production ready.
+
 ## Trust
 
 The design in this repo is intended to minimize the trust needed for an oracle, but there still is some trust required. Whether or not this design is suitable for a given use case depends on the specific requirements of that use case and the level of trust that is acceptable. The trust assumptions for this design are as follows:
