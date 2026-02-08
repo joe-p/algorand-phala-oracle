@@ -99,6 +99,7 @@ impl Event {
     }
 }
 
+// https://explorer.succinct.xyz/program/0x28c63d65593d9a4a54fbf4ba1e703d6d3bf1ea1d003799282883d5944acf8983
 pub fn main() {
     let quote_bytes = sp1_zkvm::io::read::<Vec<u8>>();
     let rtmr_event_digests = sp1_zkvm::io::read::<Vec<Vec<u8>>>();
