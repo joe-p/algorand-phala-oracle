@@ -116,7 +116,7 @@ const bootstrap = async () => {
     defaultSigner,
   });
 
-  console.log("Getting quote... this may take a minute");
+  console.log("Getting proof... this may take a minute");
   const quote = await client.getQuote(key.publicKey);
   const proofRes = await fetch("http://localhost:3000/proof", {
     method: "POST",
@@ -149,7 +149,7 @@ const bootstrap = async () => {
   ).bytes();
 
   const lsigVerifier = new Groth16Bn254LsigVerifier({
-    totalLsigs: 6,
+    totalLsigs: 2,
     appOffset: 2,
     algorand,
     vk: decodeGnarkGroth16Bn254Vk(gnarkVk),
@@ -188,15 +188,12 @@ const bootstrap = async () => {
             rtmr3,
             pubkey: key.publicKey,
             composeHash,
-            appId: appId,
+            appId,
           },
           verifier: await algorand.createTransaction.payment({
-            sender: lsigParams.sender,
-            staticFee: microAlgo(0),
-            signer: (await lsigVerifier.lsigAccount()).signer,
-            amount: (0).algo(),
+            ...lsigParams,
+            amount: microAlgo(0),
             receiver: appClient.appAddress,
-            note: "verification lsig",
           }),
           coverFeeTxn: await appClient.params.coverFee({
             args: [],
@@ -207,13 +204,14 @@ const bootstrap = async () => {
     },
   });
 
-  // NOTE: There seems to be a with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
+  // NOTE: There seems to be a bug with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
   const innerComposer = await composer.composer();
   const { atc } = await innerComposer.build();
   const txnsWithSigners = atc.buildGroup();
   txnsWithSigners[0].signer = (await lsigVerifier.lsigAccount()).signer;
 
-  await atc.execute(algorand.client.algod, 3);
+  const atcRes = await atc.execute(algorand.client.algod, 3);
+  console.log("Bootstrap transaction sent", atcRes.txIDs);
 };
 
 await bootstrap();
