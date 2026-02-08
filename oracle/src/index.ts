@@ -13,7 +13,6 @@ import {
 } from "algosdk";
 import * as algosdk from "algosdk";
 import { concatBytes } from "@noble/curves/utils.js";
-import { blake3 } from "@noble/hashes/blake3";
 
 type RawProofResponse = {
   rtmr0: string;
