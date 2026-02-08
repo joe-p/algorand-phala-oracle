@@ -1,9 +1,10 @@
 use dstack_sdk_types::dstack::GetQuoteResponse;
-use sp1_sdk::{ProverClient, SP1Stdin, include_elf};
+use sp1_sdk::{Prover, ProverClient, SP1Stdin, include_elf};
 pub const PROVER_ELF: &[u8] = include_elf!("sp1-guest");
 use axum::{Json, Router, routing::post};
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
+use std::io::{Cursor, Read};
 
 #[serde_as]
 #[derive(Debug, Serialize, Deserialize)]
@@ -85,36 +86,68 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
     let client = ProverClient::builder().mock().build();
 
     println!("Executing prover...");
-    let (mut output, report) = client.execute(PROVER_ELF, &stdin).run().unwrap();
+    let setup_start = std::time::Instant::now();
+    // Setup the program for proving.
+    let (pk, _) = client.setup(PROVER_ELF);
+    let setup_duration = setup_start.elapsed();
+    println!("Setup completed in {:?}", setup_duration);
+
+    let prove_start = std::time::Instant::now();
+
+    // Generate the proof
+    let proof = client
+        .prove(&pk, &stdin)
+        .groth16()
+        .run()
+        .expect("failed to generate proof");
+
+    let prove_duration = prove_start.elapsed();
+    println!("Proving completed in {:?}", prove_duration);
+
+    println!("Successfully generated proof!");
+
+    let groth_proof = proof.proof.try_as_groth_16().expect("not a groth16 proof");
 
     println!("Program executed successfully.");
-    println!("Gas: {:#?}", report.gas.unwrap());
+
+    let mut cursor = Cursor::new(&proof.public_values);
 
     let mut rmtr0_bytes = [0u8; 48];
     let mut rmtr1_bytes = [0u8; 48];
     let mut rmtr2_bytes = [0u8; 48];
     let mut rmtr3_bytes = [0u8; 48];
-
-    output.read_slice(&mut rmtr0_bytes);
-    output.read_slice(&mut rmtr1_bytes);
-    output.read_slice(&mut rmtr2_bytes);
-    output.read_slice(&mut rmtr3_bytes);
+    cursor.read_exact(&mut rmtr0_bytes).expect("should read RTMR0");
+    cursor.read_exact(&mut rmtr1_bytes).expect("should read RTMR1");
+    cursor.read_exact(&mut rmtr2_bytes).expect("should read RTMR2");
+    cursor.read_exact(&mut rmtr3_bytes).expect("should read RTMR3");
     println!("RTMR0: {}", hex::encode(rmtr0_bytes));
     println!("RTMR1: {}", hex::encode(rmtr1_bytes));
     println!("RTMR2: {}", hex::encode(rmtr2_bytes));
     println!("RTMR3: {}", hex::encode(rmtr3_bytes));
 
     let mut committed_key = [0u8; 32];
-    output.read_slice(&mut committed_key);
-    println!("ed25519 key: {}", hex::encode(committed_key));
-
     let mut compose_hash_bytes = [0u8; 32];
-    output.read_slice(&mut compose_hash_bytes);
+    cursor.read_exact(&mut committed_key).expect("should read committed key");
+    cursor.read_exact(&mut compose_hash_bytes).expect("should read compose hash");
+    println!("ed25519 key: {}", hex::encode(committed_key));
     println!("Compose hash: {}", hex::encode(compose_hash_bytes));
 
     let mut app_id_bytes = [0u8; 20];
-    output.read_slice(&mut app_id_bytes);
+    cursor.read_exact(&mut app_id_bytes).expect("should read app id");
     println!("App ID: {}", hex::encode(app_id_bytes));
+
+    std::fs::write("sp1_elf.bin", PROVER_ELF).expect("failed to write elf to file");
+    std::fs::write(
+        "sp1_proof.bin",
+        hex::decode(groth_proof.encoded_proof).expect("failed to decode proof"),
+    )
+    .expect("failed to write proof to file");
+
+    std::fs::write("sp1_inputs.txt", groth_proof.public_inputs.join("\n"))
+        .expect("failed to write inputs to file");
+
+    std::fs::write("sp1_vk.bin", *sp1_verifier::GROTH16_VK_BYTES)
+        .expect("failed to write vk to file");
 
     Json(ProofResponse {
         rtmr0: rmtr0_bytes.to_vec(),

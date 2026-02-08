@@ -6061,6 +6061,7 @@ dependencies = [
  "serde_with",
  "sp1-build",
  "sp1-sdk",
+ "sp1-verifier",
  "tokio",
 ]
 
