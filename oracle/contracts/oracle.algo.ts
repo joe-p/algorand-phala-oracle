@@ -6,6 +6,7 @@ import {
   GlobalState,
   itxn,
   op,
+  Account,
 } from "@algorandfoundation/algorand-typescript";
 
 import type {
@@ -18,7 +19,6 @@ import {
   Uint256,
 } from "@algorandfoundation/algorand-typescript/arc4";
 import {
-  GITxn,
   Global,
   GTxn,
   sha256,
@@ -31,7 +31,14 @@ export type Signals = Uint256[];
 export type Sha384Digest = bytes<48>;
 
 // Placeholder for proof type
-export type Proof = bytes<0>;
+type Groth16Bn254Proof = {
+  /** Prover's first commitment (G1 point) */
+  pi_a: bytes<64>;
+  /** Prover's second commitment (G2 point) */
+  pi_b: bytes<128>;
+  /** Prover's third commitment (G1 point) */
+  pi_c: bytes<64>;
+};
 
 export type CommittedInputs = {
   rtmr0: Sha384Digest;
@@ -53,7 +60,7 @@ export class PhalaTdxOracle extends Contract {
   appID = GlobalState<PhalaAppID>();
 
   /** The ed25519 public key the app will use to submit data. This will rotate each time the app is restarted */
-  pubkey = GlobalState<bytes32>();
+  pubkey = GlobalState<Account>();
 
   /** The Runtime Measurement Register for virtual hardware */
   rtmr0 = GlobalState<Sha384Digest>();
@@ -79,11 +86,7 @@ export class PhalaTdxOracle extends Contract {
 
   vkHash = GlobalState<bytes32>();
 
-  protected updatePubkey(
-    signals: Signals,
-    _proof: Proof,
-    committedInputs: CommittedInputs,
-  ) {
+  protected updatePubkey(signals: Signals, committedInputs: CommittedInputs) {
     const toBeHashed = committedInputs.rtmr0
       .concat(committedInputs.rtmr1)
       .concat(committedInputs.rtmr2)
@@ -111,13 +114,12 @@ export class PhalaTdxOracle extends Contract {
     assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
     assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
     assert(signals.at(0)!.bytes === this.vkHash.value, "VK hash mismatch");
-
-    this.pubkey.value = committedInputs.pubkey;
+    this.pubkey.value = Account(committedInputs.pubkey);
   }
 
   protected assertSenderIsPhalaApp() {
     assert(
-      Txn.sender.bytes === this.pubkey.value,
+      Txn.sender === this.pubkey.value,
       "Sender is not the registered app",
     );
   }
@@ -130,8 +132,10 @@ export class PhalaTdxOracle extends Contract {
   }
 
   bootstrap(
+    // TODO: save this addr in global state in ctor
+    verifier: gtxn.PaymentTxn,
     signals: Signals,
-    proof: Proof,
+    proof: Groth16Bn254Proof,
     committedInputs: CommittedInputs,
     coverFeeTxn: gtxn.ApplicationCallTxn,
   ) {
@@ -146,7 +150,7 @@ export class PhalaTdxOracle extends Contract {
     this.rtmr3.value = committedInputs.rtmr3;
     this.vkHash.value = signals.at(0)!.bytes.toFixed({ length: 32 });
 
-    this.updatePubkey(signals, proof, committedInputs);
+    this.updatePubkey(signals, committedInputs);
   }
 
   coverFee() {

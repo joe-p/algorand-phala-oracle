@@ -27,6 +27,7 @@
     "@noble/curves": "^2.0.1",
     "@noble/hashes": "1.8.0",
     "@phala/dstack-sdk": "^0.5.7",
-    "algosdk": "^3.5.2"
+    "algosdk": "^3.5.2",
+    "snarkjs-algorand": "^0.11.0"
   }
 }

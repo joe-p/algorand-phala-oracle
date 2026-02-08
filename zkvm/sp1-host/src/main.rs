@@ -1,7 +1,8 @@
+use axum::response::IntoResponse;
 use dstack_sdk_types::dstack::GetQuoteResponse;
 use sp1_sdk::{Prover, ProverClient, SP1Stdin, include_elf};
 pub const PROVER_ELF: &[u8] = include_elf!("sp1-guest");
-use axum::{Json, Router, routing::post};
+use axum::{Json, Router, routing::get, routing::post};
 use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
@@ -63,6 +64,10 @@ fn get_event_payload(quote_resp: &GetQuoteResponse, event: &str) -> Vec<u8> {
             hex::decode(&event_log.event_payload).expect("should be able to decode payload")
         })
         .expect("should have event")
+}
+
+async fn get_vk() -> impl IntoResponse {
+    sp1_verifier::GROTH16_VK_BYTES.to_vec()
 }
 
 async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofResponse> {
@@ -210,7 +215,9 @@ async fn main() {
     dotenv().ok();
 
     // Build our application with a route
-    let app = Router::new().route("/proof", post(get_proof));
+    let app = Router::new()
+        .route("/proof", post(get_proof))
+        .route("/vk", get(get_vk));
 
     // Run the server
     let listener = tokio::net::TcpListener::bind("127.0.0.1:3000")

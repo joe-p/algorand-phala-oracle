@@ -13,6 +13,11 @@ import {
 } from "algosdk";
 import * as algosdk from "algosdk";
 import { concatBytes } from "@noble/curves/utils.js";
+import {
+  Groth16Bn254LsigVerifier,
+  decodeGnarkGroth16Bn254Proof,
+  decodeGnarkGroth16Bn254Vk,
+} from "snarkjs-algorand";
 
 type RawProofResponse = {
   rtmr0: string;
@@ -63,14 +68,19 @@ const key = ed25519.keygen(seed);
 const defaultSender = new algosdk.Address(key.publicKey);
 const defaultSigner: TransactionSigner = async (
   txns: Transaction[],
-  _,
+  indexesToSign: number[],
 ): Promise<Uint8Array[]> => {
-  return txns.map((txn) => {
+  let stxns: Uint8Array[] = [];
+
+  for (const i of indexesToSign) {
+    const txn = txns[i];
     const txBytes = txn.bytesToSign();
     const sig = ed25519.sign(txBytes, key.secretKey);
     const signedTxn: SignedTransaction = new SignedTransaction({ txn, sig });
-    return algosdk.encodeMsgpack(signedTxn);
-  });
+    stxns.push(algosdk.encodeMsgpack(signedTxn));
+  }
+
+  return stxns;
 };
 
 let appClient: CatFactsOracleClient;
@@ -118,7 +128,7 @@ const bootstrap = async () => {
 
   const rawProofRes: RawProofResponse = await proofRes.json();
 
-  const { rtmr0, rtmr1, rtmr2, rtmr3, composeHash, appId, signals } =
+  const { rtmr0, rtmr1, rtmr2, rtmr3, composeHash, appId, signals, proof } =
     decodeProofResponse(rawProofRes);
 
   const computedSignal = signalHasher(
@@ -134,6 +144,17 @@ const bootstrap = async () => {
     );
   }
 
+  const gnarkVk = await (
+    await (await fetch("http://localhost:3000/vk")).blob()
+  ).bytes();
+
+  const lsigVerifier = new Groth16Bn254LsigVerifier({
+    totalLsigs: 6,
+    appOffset: 2,
+    algorand,
+    vk: decodeGnarkGroth16Bn254Vk(gnarkVk),
+  });
+
   // In prod another account would create the app
   const res = await factory.send.create.bare({
     sender: await algorand.account.localNetDispenser(),
@@ -146,26 +167,53 @@ const bootstrap = async () => {
     (1).algo(),
   );
 
-  await appClient.send.bootstrap({
-    staticFee: microAlgo(3_000),
-    args: {
-      signals,
-      proof: new Uint8Array(0),
-      committedInputs: {
-        rtmr0,
-        rtmr1,
-        rtmr2,
-        rtmr3,
-        pubkey: key.publicKey,
-        composeHash,
-        appId: appId,
-      },
-      coverFeeTxn: await appClient.params.coverFee({
-        args: [],
-        staticFee: microAlgo(0),
-      }),
+  const composer = appClient.newGroup();
+
+  await lsigVerifier.verificationParams({
+    proof: decodeGnarkGroth16Bn254Proof(proof),
+    signals,
+    composer,
+    paramsCallback: async (params) => {
+      const { lsigParams, lsigsFee, args } = params;
+
+      // Call app with signals and proof via lsig
+      composer.bootstrap({
+        staticFee: microAlgo(3_000n + lsigsFee.microAlgo),
+        args: {
+          ...args,
+          committedInputs: {
+            rtmr0,
+            rtmr1,
+            rtmr2,
+            rtmr3,
+            pubkey: key.publicKey,
+            composeHash,
+            appId: appId,
+          },
+          verifier: await algorand.createTransaction.payment({
+            sender: lsigParams.sender,
+            staticFee: microAlgo(0),
+            signer: (await lsigVerifier.lsigAccount()).signer,
+            amount: (0).algo(),
+            receiver: appClient.appAddress,
+            note: "verification lsig",
+          }),
+          coverFeeTxn: await appClient.params.coverFee({
+            args: [],
+            staticFee: microAlgo(0),
+          }),
+        },
+      });
     },
   });
+
+  // NOTE: There seems to be a with the signer for the lsig, for some reason the lsig txn is getting a ed25519 sig
+  const innerComposer = await composer.composer();
+  const { atc } = await innerComposer.build();
+  const txnsWithSigners = atc.buildGroup();
+  txnsWithSigners[0].signer = (await lsigVerifier.lsigAccount()).signer;
+
+  await atc.execute(algorand.client.algod, 3);
 };
 
 await bootstrap();
