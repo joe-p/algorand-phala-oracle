@@ -54,22 +54,22 @@ export class PhalaTdxOracle extends Contract {
   /** The hash of the Docker compose file.
    * See https://github.com/Dstack-TEE/dstack/blob/63f30ce7eb78ba940e8bb36aeaf57b1aa79b6e5c/sdk/js/src/get-compose-hash.ts#L102
    */
-  composeHash = GlobalState<bytes32>();
+  composeHash = GlobalState<bytes32>({ key: "c" });
 
   /** The Phala application ID. We need to anchor against the app to prevent multiple apps contending to interact with the contract */
-  appID = GlobalState<PhalaAppID>();
+  phalaAppId = GlobalState<PhalaAppID>({ key: "a" });
 
   /** The ed25519 public key the app will use to submit data. This will rotate each time the app is restarted */
-  pubkey = GlobalState<Account>();
+  oracleServiceAddress = GlobalState<Account>({ key: "o" });
 
   /** The Runtime Measurement Register for virtual hardware */
-  rtmr0 = GlobalState<Sha384Digest>();
+  rtmr0 = GlobalState<Sha384Digest>({ key: "0" });
 
   /** The Runtime Measurement Register for the kernel */
-  rtmr1 = GlobalState<Sha384Digest>();
+  rtmr1 = GlobalState<Sha384Digest>({ key: "1" });
 
   /** The Runtime Measurement Register for the kernel cmdline and initrd */
-  rtmr2 = GlobalState<Sha384Digest>();
+  rtmr2 = GlobalState<Sha384Digest>({ key: "2" });
 
   /** The Runtime Measurement Register for the following application events:
    * - system-preparing
@@ -82,9 +82,9 @@ export class PhalaTdxOracle extends Contract {
    * - storage-fs
    * - system-read
    */
-  rtmr3 = GlobalState<Sha384Digest>();
+  rtmr3 = GlobalState<Sha384Digest>({ key: "3" });
 
-  vkHash = GlobalState<bytes32>();
+  vkHash = GlobalState<bytes32>({ key: "v" });
 
   protected updatePubkey(signals: Signals, committedInputs: CommittedInputs) {
     const toBeHashed = committedInputs.rtmr0
@@ -108,18 +108,21 @@ export class PhalaTdxOracle extends Contract {
       "Compose hash mismatch",
     );
 
-    assert(committedInputs.appID === this.appID.value, "Phala App ID mismatch");
+    assert(
+      committedInputs.appID === this.phalaAppId.value,
+      "Phala App ID mismatch",
+    );
     assert(committedInputs.rtmr0 === this.rtmr0.value, "RTMR0 mismatch");
     assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
     assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
     assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
     assert(signals.at(0)!.bytes === this.vkHash.value, "VK hash mismatch");
-    this.pubkey.value = Account(committedInputs.pubkey);
+    this.oracleServiceAddress.value = Account(committedInputs.pubkey);
   }
 
   protected assertSenderIsPhalaApp() {
     assert(
-      Txn.sender === this.pubkey.value,
+      Txn.sender === this.oracleServiceAddress.value,
       "Sender is not the registered app",
     );
   }
@@ -139,10 +142,10 @@ export class PhalaTdxOracle extends Contract {
     committedInputs: CommittedInputs,
     coverFeeTxn: gtxn.ApplicationCallTxn,
   ) {
-    assert(!this.appID.hasValue, "Contract already bootstrapped");
+    assert(!this.phalaAppId.hasValue, "Contract already bootstrapped");
     this.assertFeeCovered(coverFeeTxn);
 
-    this.appID.value = committedInputs.appID;
+    this.phalaAppId.value = committedInputs.appID;
     this.composeHash.value = committedInputs.composeHash;
     this.rtmr0.value = committedInputs.rtmr0;
     this.rtmr1.value = committedInputs.rtmr1;
