@@ -27,12 +27,19 @@ Intel TDX's security model assumes that malicious actors do not have direct acce
 
 ## Chain of Trust in Contract State
 
-### SP1 Verification Key Hash
+### SP1 STARK Verification Key Hash
 
 **Contract Property Name:** `vkHash`
+**Global State Key:** `k`
+
+This hash is a commitment to the verification key for the SP1 STARK proof that proves integrity of the oracle service via verifying the Intel TDX attestation and all the related commitments.
+
+### SP1 SNARK Verification Address
+
+**Contract Property Name:** `verifierAddress`
 **Global State Key:** `v`
 
-This hash is a commitment to the verification key for the SP1 STARK proof that is proved within the Groth16 proof that is verified on-chain during pubkey rotation. This is a critical part of the trust model because it ensures that the SP1 proof being verified on-chain is the same one that was attested to by Intel. A change in the verification key hash would indicate a change in the SP1 program being run by the oracle service, which could potentially be malicious.
+This is the address of the Algorand smart contract (typically a [stateless logic signature](https://github.com/joe-p/snarkjs-algorand/blob/main/contracts/out/Groth16Bn254VerifierLsig.teal)) that is used to verify the Groth16 proof that wraps the SP1 STARK proof. If the contract is a stateless lsig, the address itself is a commitment to the Groth16 verification key. If the contract is a stateful app, then the app's logic must be trusted.
 
 ### Runtime Measurement Register: RTMR0
 

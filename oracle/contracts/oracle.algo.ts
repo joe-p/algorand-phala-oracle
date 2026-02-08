@@ -84,9 +84,42 @@ export class PhalaTdxOracle extends Contract {
    */
   rtmr3 = GlobalState<Sha384Digest>({ key: "3" });
 
-  vkHash = GlobalState<bytes32>({ key: "v" });
+  vkHash = GlobalState<bytes32>({ key: "k" });
 
-  protected updatePubkey(signals: Signals, committedInputs: CommittedInputs) {
+  verifierAddress = GlobalState<Account>({ key: "v" });
+
+  createApplication(verifierAddress: Account) {
+    this.verifierAddress.value = verifierAddress;
+  }
+
+  protected updateOracleServiceAddress(
+    signals: Signals,
+    committedInputs: CommittedInputs,
+    verifier: gtxn.PaymentTxn,
+  ) {
+    assert(
+      verifier.sender === this.verifierAddress.value,
+      "Invalid verifier address",
+    );
+
+    assert(signals.length === 2, "Invalid signals length");
+
+    assert(
+      committedInputs.composeHash === this.composeHash.value,
+      "Compose hash mismatch",
+    );
+
+    assert(
+      committedInputs.appID === this.phalaAppId.value,
+      "Phala App ID mismatch",
+    );
+
+    assert(committedInputs.rtmr0 === this.rtmr0.value, "RTMR0 mismatch");
+    assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
+    assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
+    assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
+    assert(signals.at(0)!.bytes === this.vkHash.value, "VK hash mismatch");
+
     const toBeHashed = committedInputs.rtmr0
       .concat(committedInputs.rtmr1)
       .concat(committedInputs.rtmr2)
@@ -99,24 +132,8 @@ export class PhalaTdxOracle extends Contract {
         "1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
       ),
     );
-
-    assert(signals.length === 2, "Invalid signals length");
     assert(signals.at(1)!.bytes === computedSignal, "Signal mismatch");
 
-    assert(
-      committedInputs.composeHash === this.composeHash.value,
-      "Compose hash mismatch",
-    );
-
-    assert(
-      committedInputs.appID === this.phalaAppId.value,
-      "Phala App ID mismatch",
-    );
-    assert(committedInputs.rtmr0 === this.rtmr0.value, "RTMR0 mismatch");
-    assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
-    assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
-    assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
-    assert(signals.at(0)!.bytes === this.vkHash.value, "VK hash mismatch");
     this.oracleServiceAddress.value = Account(committedInputs.pubkey);
   }
 
@@ -153,7 +170,7 @@ export class PhalaTdxOracle extends Contract {
     this.rtmr3.value = committedInputs.rtmr3;
     this.vkHash.value = signals.at(0)!.bytes.toFixed({ length: 32 });
 
-    this.updatePubkey(signals, committedInputs);
+    this.updateOracleServiceAddress(signals, committedInputs, verifier);
   }
 
   coverFee() {

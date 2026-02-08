@@ -162,7 +162,10 @@ const bootstrap = async () => {
   });
 
   if (DEV_MODE) {
-    const res = await factory.send.create.bare({
+    const res = await factory.send.create.createApplication({
+      args: {
+        verifierAddress: (await lsigVerifier.lsigAccount()).addr.toString(),
+      },
       sender: await algorand.account.localNetDispenser(),
     });
 
