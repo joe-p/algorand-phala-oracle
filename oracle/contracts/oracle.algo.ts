@@ -1,6 +1,7 @@
 import {
   assert,
   BoxMap,
+  Bytes,
   Contract,
   GlobalState,
   itxn,
@@ -90,10 +91,14 @@ export class PhalaTdxOracle extends Contract {
       .concat(committedInputs.pubkey)
       .concat(committedInputs.composeHash)
       .concat(committedInputs.appID);
-    const computedSignal = sha256(toBeHashed);
+    const computedSignal = sha256(toBeHashed).bitwiseAnd(
+      Bytes.fromHex(
+        "1fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+      ),
+    );
 
     assert(signals.length === 2, "Invalid signals length");
-    assert(signals.at(0)!.bytes === computedSignal, "Signal mismatch");
+    assert(signals.at(1)!.bytes === computedSignal, "Signal mismatch");
 
     assert(
       committedInputs.composeHash === this.composeHash.value,
@@ -105,7 +110,7 @@ export class PhalaTdxOracle extends Contract {
     assert(committedInputs.rtmr1 === this.rtmr1.value, "RTMR1 mismatch");
     assert(committedInputs.rtmr2 === this.rtmr2.value, "RTMR2 mismatch");
     assert(committedInputs.rtmr3 === this.rtmr3.value, "RTMR3 mismatch");
-    assert(signals.at(1)!.bytes === this.vkHash.value, "VK hash mismatch");
+    assert(signals.at(0)!.bytes === this.vkHash.value, "VK hash mismatch");
 
     this.pubkey.value = committedInputs.pubkey;
   }
@@ -139,7 +144,7 @@ export class PhalaTdxOracle extends Contract {
     this.rtmr1.value = committedInputs.rtmr1;
     this.rtmr2.value = committedInputs.rtmr2;
     this.rtmr3.value = committedInputs.rtmr3;
-    this.vkHash.value = signals.at(1)!.bytes.toFixed({ length: 32 });
+    this.vkHash.value = signals.at(0)!.bytes.toFixed({ length: 32 });
 
     this.updatePubkey(signals, proof, committedInputs);
   }

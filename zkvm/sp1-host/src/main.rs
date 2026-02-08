@@ -23,6 +23,9 @@ pub struct ProofResponse {
     pub compose_hash: Vec<u8>,
     #[serde_as(as = "Base64")]
     pub app_id: Vec<u8>,
+    #[serde_as(as = "Base64")]
+    pub proof: Vec<u8>,
+    pub signals: Vec<String>,
 }
 
 fn get_rtmr_event_digests(quote_resp: &GetQuoteResponse, imr: u32) -> Vec<Vec<u8>> {
@@ -110,16 +113,24 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
 
     println!("Program executed successfully.");
 
-    let mut cursor = Cursor::new(&proof.public_values);
+    let mut cursor = Cursor::new(proof.public_values.as_slice());
 
     let mut rmtr0_bytes = [0u8; 48];
     let mut rmtr1_bytes = [0u8; 48];
     let mut rmtr2_bytes = [0u8; 48];
     let mut rmtr3_bytes = [0u8; 48];
-    cursor.read_exact(&mut rmtr0_bytes).expect("should read RTMR0");
-    cursor.read_exact(&mut rmtr1_bytes).expect("should read RTMR1");
-    cursor.read_exact(&mut rmtr2_bytes).expect("should read RTMR2");
-    cursor.read_exact(&mut rmtr3_bytes).expect("should read RTMR3");
+    cursor
+        .read_exact(&mut rmtr0_bytes)
+        .expect("should read RTMR0");
+    cursor
+        .read_exact(&mut rmtr1_bytes)
+        .expect("should read RTMR1");
+    cursor
+        .read_exact(&mut rmtr2_bytes)
+        .expect("should read RTMR2");
+    cursor
+        .read_exact(&mut rmtr3_bytes)
+        .expect("should read RTMR3");
     println!("RTMR0: {}", hex::encode(rmtr0_bytes));
     println!("RTMR1: {}", hex::encode(rmtr1_bytes));
     println!("RTMR2: {}", hex::encode(rmtr2_bytes));
@@ -127,19 +138,29 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
 
     let mut committed_key = [0u8; 32];
     let mut compose_hash_bytes = [0u8; 32];
-    cursor.read_exact(&mut committed_key).expect("should read committed key");
-    cursor.read_exact(&mut compose_hash_bytes).expect("should read compose hash");
+    cursor
+        .read_exact(&mut committed_key)
+        .expect("should read committed key");
+    cursor
+        .read_exact(&mut compose_hash_bytes)
+        .expect("should read compose hash");
     println!("ed25519 key: {}", hex::encode(committed_key));
     println!("Compose hash: {}", hex::encode(compose_hash_bytes));
 
     let mut app_id_bytes = [0u8; 20];
-    cursor.read_exact(&mut app_id_bytes).expect("should read app id");
+    cursor
+        .read_exact(&mut app_id_bytes)
+        .expect("should read app id");
     println!("App ID: {}", hex::encode(app_id_bytes));
+
+    if cursor.position() != proof.public_values.as_slice().len() as u64 {
+        panic!("Did not consume all public values bytes");
+    }
 
     std::fs::write("sp1_elf.bin", PROVER_ELF).expect("failed to write elf to file");
     std::fs::write(
         "sp1_proof.bin",
-        hex::decode(groth_proof.encoded_proof).expect("failed to decode proof"),
+        hex::decode(&groth_proof.encoded_proof).expect("failed to decode proof"),
     )
     .expect("failed to write proof to file");
 
@@ -149,6 +170,12 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
     std::fs::write("sp1_vk.bin", *sp1_verifier::GROTH16_VK_BYTES)
         .expect("failed to write vk to file");
 
+    let proof_bytes = if groth_proof.encoded_proof.is_empty() {
+        [0u8; 1].to_vec() // Return a default proof if the encoded proof is empty
+    } else {
+        hex::decode(&groth_proof.encoded_proof).expect("failed to decode proof")
+    };
+
     Json(ProofResponse {
         rtmr0: rmtr0_bytes.to_vec(),
         rtmr1: rmtr1_bytes.to_vec(),
@@ -157,6 +184,8 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
         committed_key: committed_key.to_vec(),
         compose_hash: compose_hash_bytes.to_vec(),
         app_id: app_id_bytes.to_vec(),
+        proof: proof_bytes,
+        signals: groth_proof.public_inputs.to_vec(),
     })
 }
 

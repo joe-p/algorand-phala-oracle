@@ -13,6 +13,7 @@ import {
 } from "algosdk";
 import * as algosdk from "algosdk";
 import { concatBytes } from "@noble/curves/utils.js";
+import { blake3 } from "@noble/hashes/blake3";
 
 type RawProofResponse = {
   rtmr0: string;
@@ -22,6 +23,8 @@ type RawProofResponse = {
   committed_key: string;
   compose_hash: string;
   app_id: string;
+  proof: string;
+  signals: [string, string];
 };
 
 type ProofResponse = {
@@ -32,9 +35,12 @@ type ProofResponse = {
   committedKey: Uint8Array;
   composeHash: Uint8Array;
   appId: Uint8Array;
+  signals: [bigint, bigint];
+  proof: Uint8Array;
 };
 
 function decodeProofResponse(raw: RawProofResponse): ProofResponse {
+  console.debug("Decoding proof response: ", raw);
   return {
     rtmr0: new Uint8Array(Buffer.from(raw.rtmr0, "base64")),
     rtmr1: new Uint8Array(Buffer.from(raw.rtmr1, "base64")),
@@ -43,6 +49,8 @@ function decodeProofResponse(raw: RawProofResponse): ProofResponse {
     committedKey: new Uint8Array(Buffer.from(raw.committed_key, "base64")),
     composeHash: new Uint8Array(Buffer.from(raw.compose_hash, "base64")),
     appId: new Uint8Array(Buffer.from(raw.app_id, "base64")),
+    proof: new Uint8Array(Buffer.from(raw.proof, "base64")),
+    signals: [BigInt(raw.signals[0]), BigInt(raw.signals[1])],
   };
 }
 
@@ -66,6 +74,27 @@ let appClient: CatFactsOracleClient;
 const algorand = AlgorandClient.defaultLocalNet();
 algorand.account.setSigner(defaultSender, defaultSigner);
 
+// /// Hash the public values using the provided `hasher` function, mask the top 3 bits and
+// /// return a BigUint.
+// pub fn hash_bn254_with_fn<F>(&self, hasher: F) -> BigUint
+// where
+//     F: Fn(&[u8]) -> Vec<u8>,
+// {
+//     // Hash the public values.
+//     let mut hash = hasher(self.buffer.data.as_slice());
+//
+//     // Mask the top 3 bits.
+//     hash[0] &= 0b00011111;
+//
+//     // Return the masked hash as a BigUint.
+//     BigUint::from_bytes_be(hash.as_slice())
+// }
+const signalHasher = (bytes: Uint8Array) => {
+  const hash: Uint8Array = sha256(bytes);
+  hash[0] &= 0b00011111;
+  return algosdk.bytesToBigInt(hash);
+};
+
 const bootstrap = async () => {
   console.log("Address:", defaultSender.toString());
   const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
@@ -85,12 +114,21 @@ const bootstrap = async () => {
 
   const rawProofRes: RawProofResponse = await proofRes.json();
 
-  const { rtmr0, rtmr1, rtmr2, rtmr3, composeHash, appId } =
+  const { rtmr0, rtmr1, rtmr2, rtmr3, composeHash, appId, signals } =
     decodeProofResponse(rawProofRes);
 
-  const signal = sha256(
+  const computedSignal = signalHasher(
     concatBytes(rtmr0, rtmr1, rtmr2, rtmr3, key.publicKey, composeHash, appId),
   );
+
+  if (computedSignal !== signals[1]) {
+    throw new Error(
+      "Signal verification failed. Got " +
+        computedSignal +
+        ", expected " +
+        signals[0],
+    );
+  }
 
   // In prod another account would create the app
   const res = await factory.send.create.bare({
@@ -107,10 +145,7 @@ const bootstrap = async () => {
   await appClient.send.bootstrap({
     staticFee: microAlgo(3_000),
     args: {
-      signals: [
-        algosdk.bytesToBigInt(signal),
-        algosdk.bytesToBigInt(new Uint8Array(32)), // vk hash
-      ],
+      signals,
       proof: new Uint8Array(0),
       committedInputs: {
         rtmr0,
