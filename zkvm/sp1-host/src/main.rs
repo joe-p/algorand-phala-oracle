@@ -4,6 +4,7 @@ pub const PROVER_ELF: &[u8] = include_elf!("sp1-guest");
 use axum::{Json, Router, routing::post};
 use serde::{Deserialize, Serialize};
 use serde_with::{base64::Base64, serde_as};
+use std::fs;
 use std::io::{Cursor, Read};
 
 #[serde_as]
@@ -26,6 +27,19 @@ pub struct ProofResponse {
     #[serde_as(as = "Base64")]
     pub proof: Vec<u8>,
     pub signals: Vec<String>,
+}
+
+const ELF_CACHE_PATH: &str = "sp1_elf.bin";
+const PROOF_CACHE_PATH: &str = "sp1_proof_response.json";
+
+fn load_cached_proof() -> Option<ProofResponse> {
+    let cached_elf = fs::read(ELF_CACHE_PATH).ok()?;
+    if cached_elf != PROVER_ELF {
+        return None;
+    }
+
+    let cached_json = fs::read_to_string(PROOF_CACHE_PATH).ok()?;
+    serde_json::from_str(&cached_json).ok()
 }
 
 fn get_rtmr_event_digests(quote_resp: &GetQuoteResponse, imr: u32) -> Vec<Vec<u8>> {
@@ -52,6 +66,10 @@ fn get_event_payload(quote_resp: &GetQuoteResponse, event: &str) -> Vec<u8> {
 
 async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofResponse> {
     sp1_sdk::utils::setup_logger();
+
+    if let Some(cached) = load_cached_proof() {
+        return Json(cached);
+    }
 
     let quote = quote_resp
         .decode_quote()
@@ -157,18 +175,7 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
         panic!("Did not consume all public values bytes");
     }
 
-    std::fs::write("sp1_elf.bin", PROVER_ELF).expect("failed to write elf to file");
-    std::fs::write(
-        "sp1_proof.bin",
-        hex::decode(&groth_proof.encoded_proof).expect("failed to decode proof"),
-    )
-    .expect("failed to write proof to file");
-
-    std::fs::write("sp1_inputs.txt", groth_proof.public_inputs.join("\n"))
-        .expect("failed to write inputs to file");
-
-    std::fs::write("sp1_vk.bin", *sp1_verifier::GROTH16_VK_BYTES)
-        .expect("failed to write vk to file");
+    fs::write(ELF_CACHE_PATH, PROVER_ELF).expect("failed to write elf to file");
 
     let proof_bytes = if groth_proof.encoded_proof.is_empty() {
         [0u8; 1].to_vec() // Return a default proof if the encoded proof is empty
@@ -176,7 +183,7 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
         hex::decode(&groth_proof.encoded_proof).expect("failed to decode proof")
     };
 
-    Json(ProofResponse {
+    let proof_response = ProofResponse {
         rtmr0: rmtr0_bytes.to_vec(),
         rtmr1: rmtr1_bytes.to_vec(),
         rtmr2: rmtr2_bytes.to_vec(),
@@ -186,7 +193,13 @@ async fn get_proof(Json(quote_resp): Json<GetQuoteResponse>) -> Json<ProofRespon
         app_id: app_id_bytes.to_vec(),
         proof: proof_bytes,
         signals: groth_proof.public_inputs.to_vec(),
-    })
+    };
+
+    if let Ok(serialized) = serde_json::to_string(&proof_response) {
+        let _ = fs::write(PROOF_CACHE_PATH, serialized);
+    }
+
+    Json(proof_response)
 }
 
 #[tokio::main]

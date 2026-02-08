@@ -55,7 +55,12 @@ function decodeProofResponse(raw: RawProofResponse): ProofResponse {
 }
 
 const client = new DstackClient("../dstack/sdk/simulator/dstack.sock");
-const key = ed25519.keygen();
+
+// NOTE: In production, we'd not use a fixed seed, but we are using it here so
+// we can easily cache the proof
+const seed = new Uint8Array(32).fill(0);
+const key = ed25519.keygen(seed);
+
 const defaultSender = new algosdk.Address(key.publicKey);
 const defaultSigner: TransactionSigner = async (
   txns: Transaction[],
