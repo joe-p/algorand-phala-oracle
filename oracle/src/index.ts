@@ -18,6 +18,12 @@ import {
   decodeGnarkGroth16Bn254Proof,
   decodeGnarkGroth16Bn254Vk,
 } from "snarkjs-algorand";
+import { env } from "node:process";
+
+const DEV_MODE = true;
+const ALGORAND_APP: bigint = BigInt(env.ALGORAND_APP ?? 0n);
+const ALGORAND_NETWORK =
+  (env.ALGORAND_NETWORK as "mainnet" | "testnet" | "localnet") ?? "localnet";
 
 type RawProofResponse = {
   rtmr0: string;
@@ -60,9 +66,10 @@ function decodeProofResponse(raw: RawProofResponse): ProofResponse {
 
 const client = new DstackClient("../dstack/sdk/simulator/dstack.sock");
 
-// NOTE: In production, we'd not use a fixed seed, but we are using it here so
-// we can easily cache the proof
-const seed = new Uint8Array(32).fill(0);
+let seed: Uint8Array | undefined = undefined;
+if (DEV_MODE) {
+  seed = new Uint8Array(32).fill(0);
+}
 const key = ed25519.keygen(seed);
 
 const defaultSender = new algosdk.Address(key.publicKey);
@@ -84,28 +91,27 @@ const defaultSigner: TransactionSigner = async (
 };
 
 let appClient: CatFactsOracleClient;
+let algorand: AlgorandClient;
 
-const algorand = AlgorandClient.defaultLocalNet();
+switch (ALGORAND_NETWORK) {
+  case "mainnet":
+    algorand = AlgorandClient.mainNet();
+    break;
+  case "testnet":
+    algorand = AlgorandClient.testNet();
+    break;
+  case "localnet":
+    algorand = AlgorandClient.defaultLocalNet();
+    break;
+  default:
+    throw new Error("Invalid ALGORAND_NETWORK: " + ALGORAND_NETWORK);
+}
+
 algorand.account.setSigner(defaultSender, defaultSigner);
 
-// /// Hash the public values using the provided `hasher` function, mask the top 3 bits and
-// /// return a BigUint.
-// pub fn hash_bn254_with_fn<F>(&self, hasher: F) -> BigUint
-// where
-//     F: Fn(&[u8]) -> Vec<u8>,
-// {
-//     // Hash the public values.
-//     let mut hash = hasher(self.buffer.data.as_slice());
-//
-//     // Mask the top 3 bits.
-//     hash[0] &= 0b00011111;
-//
-//     // Return the masked hash as a BigUint.
-//     BigUint::from_bytes_be(hash.as_slice())
-// }
 const signalHasher = (bytes: Uint8Array) => {
   const hash: Uint8Array = sha256(bytes);
-  hash[0] &= 0b00011111;
+  hash[0] &= 0b00011111; // So the value fits in the bn254 scalar field
   return algosdk.bytesToBigInt(hash);
 };
 
@@ -155,17 +161,25 @@ const bootstrap = async () => {
     vk: decodeGnarkGroth16Bn254Vk(gnarkVk),
   });
 
-  // In prod another account would create the app
-  const res = await factory.send.create.bare({
-    sender: await algorand.account.localNetDispenser(),
-  });
+  if (DEV_MODE) {
+    const res = await factory.send.create.bare({
+      sender: await algorand.account.localNetDispenser(),
+    });
 
-  appClient = res.appClient;
+    appClient = res.appClient;
 
-  await algorand.account.ensureFundedFromEnvironment(
-    appClient.appAddress,
-    (1).algo(),
-  );
+    await algorand.account.ensureFundedFromEnvironment(
+      appClient.appAddress,
+      (1).algo(),
+    );
+  } else {
+    if (ALGORAND_APP === 0n) {
+      throw new Error(
+        "ALGORAND_APP env var must be set to a deployed app in production",
+      );
+    }
+    appClient = factory.getAppClientById({ appId: ALGORAND_APP });
+  }
 
   const composer = appClient.newGroup();
 
@@ -251,9 +265,11 @@ const factEveryBlock = async () => {
 
     console.debug(`Round ${round}: Fact added. Waiting for next round...`);
 
-    // In prod we'll wait for a block, but for now use timeout
-    // await algorand.client.algod.statusAfterBlock(round).do();
-    await new Promise((resolve) => setTimeout(resolve, 3000));
+    if (DEV_MODE) {
+      await new Promise((resolve) => setTimeout(resolve, 3000));
+    } else {
+      await algorand.client.algod.statusAfterBlock(round).do();
+    }
 
     round += 1n;
   }
