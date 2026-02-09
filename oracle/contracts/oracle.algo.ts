@@ -152,7 +152,6 @@ export class PhalaTdxOracle extends Contract {
   }
 
   bootstrap(
-    // TODO: save this addr in global state in ctor
     verifier: gtxn.PaymentTxn,
     signals: Signals,
     proof: Groth16Bn254Proof,
