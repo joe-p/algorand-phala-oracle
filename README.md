@@ -33,7 +33,7 @@ Intel TDX's security model assumes that malicious actors do not have direct acce
 
 #### Mitigations
 
-The main way to mitigate the risk of hardware being compromised is to use at least one other server running the oracle service using another TEE (i.e. AMD SEV-SNP). Multiple services can then use some sort of consensus mechanism to determine the correct data to submit to the blockchain. At this, this is essentially a decentralized oracle network similar to Chainlink or Wormhole guardians, but with a smaller number of nodes.
+The main way to mitigate the risk of hardware being compromised is to use at least one other server running the oracle service using another TEE (i.e. AMD SEV-SNP). Multiple services can then use some sort of consensus mechanism to determine the correct data to submit to the blockchain. At this point, this is essentially a decentralized oracle network similar to Chainlink or Wormhole guardians, but with a smaller number of nodes.
 
 ## Chain of Trust in Contract State
 
