@@ -21,9 +21,19 @@ The design in this repo is intended to minimize the trust needed for an oracle, 
 
 Phala utilizes Intel TDX to create a secure enclave for the oracle service. This means that users must trust Intel's attestation process to ensure that the oracle service is running in a secure environment. If the attestation process is compromised, it could potentially allow an attacker to run malicious code in the enclave and manipulate the data being submitted to the blockchain. The entity we must trust here is Intel. We trust that Intel's attestation keypairs are not compromised and that they only sign attestations for genuine TDX enclaves.
 
+It should also be noted that like any other software, we are implicitly trusting it works as intended. There has been a history of software vulnerabilities in Intel's SGX, such as Plundervolt, Foreshadow, and SGAxe.
+
+#### Mitigations
+
+The main way to mitigate the risk of Intel attestation being compromised is to use at least one other server running the oracle service using another TEE (i.e. AMD SEV-SNP). If a 2/2 threshold is required, a failure in the Intel attestation process would result in a liveness failure but not a safety failure.
+
 ### Phala Hardware
 
 Intel TDX's security model assumes that malicious actors do not have direct access to the hardware. If an attacker has physical access to the machine running the oracle service, they could potentially tamper with the hardware or extract sensitive information from the enclave and/or forge a fake attestation quote. The entity we must trust here is the operator of the machine running the oracle service. We trust that they have taken appropriate measures to secure the hardware and prevent unauthorized access. According to [this LinkedIn post](https://www.linkedin.com/posts/phala-network_the-new-ddr5-vulnerability-cant-touch-phala-activity-7389007270052884480-YByK/), Phala uses OVH and other [tier 3](https://uptimeinstitute.com/tiers) data centers.
+
+#### Mitigations
+
+The main way to mitigate the risk of hardware being compromised is to use at least one other server running the oracle service using another TEE (i.e. AMD SEV-SNP). Multiple services can then use some sort of consensus mechanism to determine the correct data to submit to the blockchain. At this, this is essentially a decentralized oracle network similar to Chainlink or Wormhole guardians, but with a smaller number of nodes.
 
 ## Chain of Trust in Contract State
 
