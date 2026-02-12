@@ -80,7 +80,7 @@ const defaultSigner: TransactionSigner = async (
   let stxns: Uint8Array[] = [];
 
   for (const i of indexesToSign) {
-    const txn = txns[i];
+    const txn = txns[i]!;
     const txBytes = txn.bytesToSign();
     const sig = ed25519.sign(txBytes, key.secretKey);
     const signedTxn: SignedTransaction = new SignedTransaction({ txn, sig });
@@ -111,7 +111,7 @@ algorand.account.setSigner(defaultSender, defaultSigner);
 
 const signalHasher = (bytes: Uint8Array) => {
   const hash: Uint8Array = sha256(bytes);
-  hash[0] &= 0b00011111; // So the value fits in the bn254 scalar field
+  hash[0]! &= 0b00011111; // So the value fits in the bn254 scalar field
   return algosdk.bytesToBigInt(hash);
 };
 
@@ -132,7 +132,7 @@ const bootstrap = async () => {
     body: JSON.stringify(quote),
   });
 
-  const rawProofRes: RawProofResponse = await proofRes.json();
+  const rawProofRes = (await proofRes.json()) as RawProofResponse;
 
   const { rtmr0, rtmr1, rtmr2, rtmr3, composeHash, appId, signals, proof } =
     decodeProofResponse(rawProofRes);
@@ -225,7 +225,7 @@ const bootstrap = async () => {
   const innerComposer = await composer.composer();
   const { atc } = await innerComposer.build();
   const txnsWithSigners = atc.buildGroup();
-  txnsWithSigners[0].signer = (await lsigVerifier.lsigAccount()).signer;
+  txnsWithSigners[0]!.signer = (await lsigVerifier.lsigAccount()).signer;
 
   const atcRes = await atc.execute(algorand.client.algod, 3);
   console.log("Bootstrap transaction sent", atcRes.txIDs);
@@ -243,6 +243,10 @@ const factEveryBlock = async () => {
 
     console.debug(`Round ${round}: Adding fact "${fact}"`);
 
+    // Send group from defaultSender, which always has a balance of 0 ALGO
+    // 1. fee: 0 appl to call `coverFee`. This triggers an inner payment to the sender to cover the cost of the group's fees plus account MBR
+    // 2. fee: 3000 appl to call `addFact` with the data and the fee to cover the group
+    // 3. fee: 0 pay to close the account and return the remaining balance to the app (fee: 0)
     await appClient
       .newGroup()
       .addFact({
