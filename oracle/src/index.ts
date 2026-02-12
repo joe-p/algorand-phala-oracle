@@ -64,66 +64,68 @@ function decodeProofResponse(raw: RawProofResponse): ProofResponse {
   };
 }
 
-const client = new DstackClient("../dstack/sdk/simulator/dstack.sock");
-
-let seed: Uint8Array | undefined = undefined;
-if (DEV_MODE) {
-  seed = new Uint8Array(32).fill(0);
-}
-const key = ed25519.keygen(seed);
-
-const defaultSender = new algosdk.Address(key.publicKey);
-const defaultSigner: TransactionSigner = async (
-  txns: Transaction[],
-  indexesToSign: number[],
-): Promise<Uint8Array[]> => {
-  let stxns: Uint8Array[] = [];
-
-  for (const i of indexesToSign) {
-    const txn = txns[i]!;
-    const txBytes = txn.bytesToSign();
-    const sig = ed25519.sign(txBytes, key.secretKey);
-    const signedTxn: SignedTransaction = new SignedTransaction({ txn, sig });
-    stxns.push(algosdk.encodeMsgpack(signedTxn));
-  }
-
-  return stxns;
-};
-
-let appClient: CatFactsOracleClient;
-let algorand: AlgorandClient;
-
-switch (ALGORAND_NETWORK) {
-  case "mainnet":
-    algorand = AlgorandClient.mainNet();
-    break;
-  case "testnet":
-    algorand = AlgorandClient.testNet();
-    break;
-  case "localnet":
-    algorand = AlgorandClient.defaultLocalNet();
-    break;
-  default:
-    throw new Error("Invalid ALGORAND_NETWORK: " + ALGORAND_NETWORK);
-}
-
-algorand.account.setSigner(defaultSender, defaultSigner);
-
-const signalHasher = (bytes: Uint8Array) => {
+function signalHasher(bytes: Uint8Array) {
   const hash: Uint8Array = sha256(bytes);
   hash[0]! &= 0b00011111; // So the value fits in the bn254 scalar field
   return algosdk.bytesToBigInt(hash);
-};
+}
 
-const bootstrap = async () => {
-  console.log("Address:", defaultSender.toString());
+const dstackClient = new DstackClient("../dstack/sdk/simulator/dstack.sock");
+
+async function bootstrap(): Promise<{
+  algorand: AlgorandClient;
+  appClient: CatFactsOracleClient;
+  oracleServiceAddress: algosdk.Address;
+}> {
+  let algorand: AlgorandClient;
+  switch (ALGORAND_NETWORK) {
+    case "mainnet":
+      algorand = AlgorandClient.mainNet();
+      break;
+    case "testnet":
+      algorand = AlgorandClient.testNet();
+      break;
+    case "localnet":
+      algorand = AlgorandClient.defaultLocalNet();
+      break;
+    default:
+      throw new Error("Invalid ALGORAND_NETWORK: " + ALGORAND_NETWORK);
+  }
+
+  let seed: Uint8Array | undefined = undefined;
+  if (DEV_MODE) {
+    seed = new Uint8Array(32).fill(0);
+  }
+  const key = ed25519.keygen(seed);
+
+  const oracleServiceAddress = new algosdk.Address(key.publicKey);
+  const defaultSigner: TransactionSigner = async (
+    txns: Transaction[],
+    indexesToSign: number[],
+  ): Promise<Uint8Array[]> => {
+    let stxns: Uint8Array[] = [];
+
+    for (const i of indexesToSign) {
+      const txn = txns[i]!;
+      const txBytes = txn.bytesToSign();
+      const sig = ed25519.sign(txBytes, key.secretKey);
+      const signedTxn: SignedTransaction = new SignedTransaction({ txn, sig });
+      stxns.push(algosdk.encodeMsgpack(signedTxn));
+    }
+
+    return stxns;
+  };
+
+  algorand.account.setSigner(oracleServiceAddress, defaultSigner);
+
+  console.log("Address:", oracleServiceAddress.toString());
   const factory = algorand.client.getTypedAppFactory(CatFactsOracleFactory, {
     defaultSender: new algosdk.Address(key.publicKey),
     defaultSigner,
   });
 
   console.log("Getting proof... this may take a minute");
-  const quote = await client.getQuote(key.publicKey);
+  const quote = await dstackClient.getQuote(key.publicKey);
   const proofRes = await fetch("http://localhost:3000/proof", {
     method: "POST",
     headers: {
@@ -160,6 +162,8 @@ const bootstrap = async () => {
     algorand,
     vk: decodeGnarkGroth16Bn254Vk(gnarkVk),
   });
+
+  let appClient: CatFactsOracleClient;
 
   if (DEV_MODE) {
     const res = await factory.send.create.createApplication({
@@ -229,11 +233,15 @@ const bootstrap = async () => {
 
   const atcRes = await atc.execute(algorand.client.algod, 3);
   console.log("Bootstrap transaction sent", atcRes.txIDs);
-};
 
-await bootstrap();
+  return { algorand, appClient, oracleServiceAddress };
+}
 
-const factEveryBlock = async () => {
+async function factEveryBlock(
+  algorand: AlgorandClient,
+  appClient: CatFactsOracleClient,
+  oracleServiceAddress: algosdk.Address,
+) {
   let round = (await algorand.client.algod.status().do()).lastRound;
 
   while (true) {
@@ -261,8 +269,7 @@ const factEveryBlock = async () => {
       })
       .addTransaction(
         await algorand.createTransaction.payment({
-          sender: defaultSender,
-          signer: defaultSigner,
+          sender: oracleServiceAddress,
           receiver: appClient.appAddress,
           amount: (0).algo(),
           closeRemainderTo: appClient.appAddress,
@@ -280,6 +287,7 @@ const factEveryBlock = async () => {
 
     round += 1n;
   }
-};
+}
 
-factEveryBlock();
+const { algorand, appClient, oracleServiceAddress } = await bootstrap();
+factEveryBlock(algorand, appClient, oracleServiceAddress);
