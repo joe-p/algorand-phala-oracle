@@ -8,13 +8,10 @@ import {
   op,
   Account,
   TransactionType,
+  assertMatch,
 } from "@algorandfoundation/algorand-typescript";
 
-import type {
-  bytes,
-  gtxn,
-  uint64,
-} from "@algorandfoundation/algorand-typescript";
+import { bytes, gtxn, uint64 } from "@algorandfoundation/algorand-typescript";
 import {
   methodSelector,
   Uint256,
@@ -166,28 +163,23 @@ export class PhalaTdxOracle extends Contract {
   }
 
   protected coverFee() {
-    const gindex: uint64 = Txn.groupIndex + 1;
-    assert(
-      GTxn.typeEnum(gindex) === TransactionType.Payment,
-      "The fee payment transaction must be a payment transaction",
-    );
-    assert(
-      GTxn.sender(gindex) === Txn.sender,
-      "The fee pament transaction must be sent by the same sender as the app call",
-    );
-    assert(
-      GTxn.closeRemainderTo(gindex) === Global.currentApplicationAddress,
-      "The fee payment transaction must close the app address",
-    );
-    assert(
-      GTxn.amount(gindex) === 0,
-      "The fee payment transaction must not transfer any Algos",
+    const feePayment = gtxn.PaymentTxn(Txn.groupIndex + 1);
+
+    assertMatch(
+      feePayment,
+      {
+        sender: Txn.sender,
+        receiver: Global.currentApplicationAddress,
+        amount: 0,
+        closeRemainderTo: Global.currentApplicationAddress,
+      },
+      "The fee payment transaction must be a 0 ALGO pay that closes to the app address",
     );
 
     itxn
       .payment({
         receiver: Txn.sender,
-        amount: GTxn.fee(gindex) + Global.minBalance - op.balance(Txn.sender),
+        amount: feePayment.fee + Global.minBalance,
       })
       .submit();
   }
