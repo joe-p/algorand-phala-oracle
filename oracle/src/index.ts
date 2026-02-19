@@ -158,7 +158,7 @@ async function bootstrap(): Promise<{
 
   const lsigVerifier = new Groth16Bn254LsigVerifier({
     totalLsigs: 2,
-    appOffset: 2,
+    appOffset: 1,
     algorand,
     vk: decodeGnarkGroth16Bn254Vk(gnarkVk),
   });
@@ -199,7 +199,7 @@ async function bootstrap(): Promise<{
 
       // Call app with signals and proof via lsig
       composer.bootstrap({
-        staticFee: microAlgo(3_000n + lsigsFee.microAlgo),
+        staticFee: microAlgo(0),
         args: {
           ...args,
           committedInputs: {
@@ -216,12 +216,18 @@ async function bootstrap(): Promise<{
             amount: microAlgo(0),
             receiver: appClient.appAddress,
           }),
-          coverFeeTxn: await appClient.params.coverFee({
-            args: [],
-            staticFee: microAlgo(0),
-          }),
         },
       });
+
+      composer.addTransaction(
+        await algorand.createTransaction.payment({
+          sender: oracleServiceAddress,
+          receiver: appClient.appAddress,
+          extraFee: microAlgo(2_000n + lsigsFee.microAlgo),
+          amount: (0).algo(),
+          closeRemainderTo: appClient.appAddress,
+        }),
+      );
     },
   });
 
@@ -252,25 +258,21 @@ async function factEveryBlock(
     console.debug(`Round ${round}: Adding fact "${fact}"`);
 
     // Send group from defaultSender, which always has a balance of 0 ALGO
-    // 1. fee: 0 appl to call `coverFee`. This triggers an inner payment to the sender to cover the cost of the group's fees plus account MBR
-    // 2. fee: 3000 appl to call `addFact` with the data and the fee to cover the group
-    // 3. fee: 0 pay to close the account and return the remaining balance to the app (fee: 0)
+    // 1. fee: 0 appl to call `addFact` with the data. This call triggers an itxn to the sender to cover the fee next
+    // 2. fee: 3000 (1000 base + 2000 for appl and inner) pay to close the account and return the remaining balance to the app
     await appClient
       .newGroup()
       .addFact({
         args: {
           fact: fact!,
-          coverFeeTxn: await appClient.params.coverFee({
-            args: [],
-            staticFee: microAlgo(0),
-          }),
         },
-        staticFee: microAlgo(3_000),
+        staticFee: microAlgo(0),
       })
       .addTransaction(
         await algorand.createTransaction.payment({
           sender: oracleServiceAddress,
           receiver: appClient.appAddress,
+          extraFee: microAlgo(2_000n),
           amount: (0).algo(),
           closeRemainderTo: appClient.appAddress,
         }),
