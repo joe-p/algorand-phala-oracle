@@ -7,6 +7,7 @@ import {
   itxn,
   op,
   Account,
+  TransactionType,
 } from "@algorandfoundation/algorand-typescript";
 
 import type {
@@ -144,22 +145,14 @@ export class PhalaTdxOracle extends Contract {
     );
   }
 
-  protected assertFeeCovered(coverFeeTxn: gtxn.ApplicationCallTxn) {
-    assert(
-      coverFeeTxn.appArgs(0) === methodSelector(this.coverFee),
-      "Invalid cover fee txn",
-    );
-  }
-
   bootstrap(
     verifier: gtxn.PaymentTxn,
     signals: Signals,
     proof: Groth16Bn254Proof,
     committedInputs: CommittedInputs,
-    coverFeeTxn: gtxn.ApplicationCallTxn,
   ) {
     assert(!this.phalaAppId.hasValue, "Contract already bootstrapped");
-    this.assertFeeCovered(coverFeeTxn);
+    this.coverFee();
 
     this.phalaAppId.value = committedInputs.appID;
     this.composeHash.value = committedInputs.composeHash;
@@ -172,16 +165,24 @@ export class PhalaTdxOracle extends Contract {
     this.updateOracleServiceAddress(signals, committedInputs, verifier);
   }
 
-  coverFee() {
+  protected coverFee() {
     const gindex: uint64 = Txn.groupIndex + 1;
-    const method = GTxn.applicationArgs(gindex, 0);
-
-    assert(GTxn.applicationId(gindex) === Global.currentApplicationId);
-    assert(method !== methodSelector(this.coverFee));
-
-    if (method !== methodSelector(this.bootstrap)) {
-      this.assertSenderIsPhalaApp();
-    }
+    assert(
+      GTxn.typeEnum(gindex) === TransactionType.Payment,
+      "The fee payment transaction must be a payment transaction",
+    );
+    assert(
+      GTxn.sender(gindex) === Txn.sender,
+      "The fee pament transaction must be sent by the same sender as the app call",
+    );
+    assert(
+      GTxn.closeRemainderTo(gindex) === Global.currentApplicationAddress,
+      "The fee payment transaction must close the app address",
+    );
+    assert(
+      GTxn.amount(gindex) === 0,
+      "The fee payment transaction must not transfer any Algos",
+    );
 
     itxn
       .payment({
@@ -195,11 +196,9 @@ export class PhalaTdxOracle extends Contract {
 export class CatFactsOracle extends PhalaTdxOracle {
   facts = BoxMap<uint64, string>({ keyPrefix: "" });
 
-  addFact(coverFeeTxn: gtxn.ApplicationCallTxn, fact: string) {
+  addFact(fact: string) {
     this.assertSenderIsPhalaApp();
-    this.assertFeeCovered(coverFeeTxn);
-
-    assert(coverFeeTxn.appArgs(0) === methodSelector(this.coverFee));
+    this.coverFee();
 
     this.facts(Global.round).value = fact;
   }
