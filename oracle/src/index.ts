@@ -259,7 +259,7 @@ async function factEveryBlock(
 
     // Send group from defaultSender, which always has a balance of 0 ALGO
     // 1. fee: 0 appl to call `addFact` with the data. This call triggers an itxn to the sender to cover the fee next
-    // 2. fee: 2000 pay to close the account and return the remaining balance to the app
+    // 2. fee: 3000 (1000 base + 2000 for appl and inner) pay to close the account and return the remaining balance to the app
     await appClient
       .newGroup()
       .addFact({
