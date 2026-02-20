@@ -199,6 +199,7 @@ async function bootstrap(): Promise<{
 
       // Call app with signals and proof via lsig
       composer.bootstrap({
+        sender: oracleServiceAddress,
         staticFee: microAlgo(0),
         args: {
           ...args,
@@ -263,6 +264,7 @@ async function factEveryBlock(
     await appClient
       .newGroup()
       .addFact({
+        sender: oracleServiceAddress,
         args: {
           fact: fact!,
         },
